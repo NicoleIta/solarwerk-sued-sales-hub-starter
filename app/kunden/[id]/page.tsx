@@ -1,5 +1,6 @@
 import { getKunde, getPipeline } from "@/lib/data";
 import KundeDetailClient from "./kunde-detail-client";
+import { notFound } from "next/navigation";
 
 export default async function KundenDetailPage({
   params,
@@ -9,9 +10,7 @@ export default async function KundenDetailPage({
   const { id } = await params;
   const kunde = getKunde(Number(id));
 
-  if (!kunde) {
-    return <p>Kunde nicht gefunden</p>;
-  }
+  if (!kunde) notFound();
 
   const pipelineEintraege = getPipeline().filter(
     (e) => e.firma === kunde.firma
