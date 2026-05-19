@@ -32,29 +32,29 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
           <div className="flex items-center gap-3">
             <Users className="h-8 w-8 text-blue-500" />
             <div>
-              <p className="text-sm text-gray-500">Gesamtkunden</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Gesamtkunden</p>
               <p className="text-2xl font-bold">{gesamt}</p>
             </div>
           </div>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
           <div className="flex items-center gap-3">
             <CheckCircle className="h-8 w-8 text-green-500" />
             <div>
-              <p className="text-sm text-gray-500">Aktive Kunden</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Aktive Kunden</p>
               <p className="text-2xl font-bold">{aktive}</p>
             </div>
           </div>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-8 w-8 text-red-500" />
             <div>
-              <p className="text-sm text-gray-500">Beschwerden</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Beschwerden</p>
               <p className="text-2xl font-bold">{beschwerden}</p>
             </div>
           </div>
@@ -67,7 +67,7 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
           onChange={(e) =>
             setStatusFilter(e.target.value as KundenStatus | "alle")
           }
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+          className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
         >
           <option value="alle">Alle Status</option>
           <option value="aktiv">Aktiv</option>
@@ -79,24 +79,24 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
           placeholder="Suche nach Firma oder Ansprechpartner..."
           value={suchbegriff}
           onChange={(e) => setSuchbegriff(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm sm:w-80"
+          className="rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm sm:w-80"
         />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-gray-200 bg-gray-50">
+          <thead className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th className="px-4 py-3 font-medium text-gray-600">Firma</th>
-              <th className="px-4 py-3 font-medium text-gray-600">
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Firma</th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
                 Ansprechpartner
               </th>
-              <th className="px-4 py-3 font-medium text-gray-600">Branche</th>
-              <th className="px-4 py-3 font-medium text-gray-600">
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Branche</th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
                 Anlagengroesse (kWp)
               </th>
-              <th className="px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="px-4 py-3 font-medium text-gray-600">
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
                 Letzter Kontakt
               </th>
             </tr>
@@ -106,7 +106,7 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
               <tr
                 key={kunde.id}
                 onClick={() => router.push(`/kunden/${kunde.id}`)}
-                className="cursor-pointer border-b border-gray-100 hover:bg-gray-50"
+                className="cursor-pointer border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <td className="px-4 py-3 font-medium">{kunde.firma}</td>
                 <td className="px-4 py-3">{kunde.ansprechpartner}</td>
@@ -142,7 +142,7 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
           </tbody>
         </table>
         {gefilterteKunden.length === 0 && (
-          <p className="px-4 py-8 text-center text-gray-400">
+          <p className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
             Keine Kunden gefunden.
           </p>
         )}
