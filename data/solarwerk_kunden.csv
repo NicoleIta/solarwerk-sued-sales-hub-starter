@@ -1,0 +1,26 @@
+id,firma,ansprechpartner,branche,anlagengroesse_kwp,status,letzter_kontakt,telefon,email,notiz
+1,Huber Schreinerei GmbH,Andreas Huber,Handwerk,45,aktiv,2026-03-12,0821-553-1276,andreas.huber@huber-schreinerei.de,Erweiterung um 25 kWp diskutiert. Angebot in Vorbereitung.
+2,Lechner Praezisionstechnik GmbH,Dr. Sabine Lechner,Industrie,120,aktiv,2026-04-22,08233-46-721,s.lechner@lechner-praezision.de,Sehr zufrieden. Moechte Speicher von 35 auf 60 kWh aufstocken.
+3,Schwarzhuber Hof,Markus Schwarzhuber,Landwirtschaft,380,aktiv,2026-02-08,08334-94-12,hof@schwarzhuber-allgaeu.de,Stallaufdach komplett belegt. Bewaesserung laeuft ueber PV.
+4,Sailer Spedition KG,Petra Sailer,Gewerbe,540,in_wartung,2026-04-30,0821-217-8800,p.sailer@sailer-logistik.de,Wechselrichter 3 ausgefallen. Ersatzteil bestellt. Wartungstermin 06.05.2026.
+5,Hotel Sonnenwinkel,Florian Brunner,Gewerbe,95,aktiv,2026-01-15,08362-988-456,brunner@sonnenwinkel-hotel.de,Eigenverbrauch bei 82 Prozent. Erweiterung Wellnessbereich diskutiert.
+6,Kreitmeier Druck und Verlag,Manfred Kreitmeier,Industrie,78,beschwerde,2026-05-02,0821-450-2293,service@kreitmeier-druck.de,Reklamation: Monitoring zeigt 15 Prozent Minderleistung seit Maerz.
+7,Vogel Gefluegelhof,Christine Vogel,Landwirtschaft,220,aktiv,2026-03-28,08293-771-44,info@vogel-gefluegel.de,Waermepumpe fuer Stallklimatisierung laeuft mit PV-Strom.
+8,Eichinger Metallbau OHG,Stefan Eichinger,Handwerk,65,aktiv,2026-04-05,08251-639-12,s.eichinger@eichinger-metallbau.de,Erste Wartung Q3 faellig. Plant Lackiererei-Erweiterung 2027.
+9,Tagungshotel Bergblick,Anna-Maria Holzer,Gewerbe,110,in_wartung,2026-04-25,08323-401-700,holzer@bergblick-tagung.de,Modul-Reinigung gebucht fuer Mai. Vogelschaeden am Dach.
+10,Mayrhofer Logistik GmbH,Wolfgang Mayrhofer,Gewerbe,720,aktiv,2026-03-18,0821-799-4400,w.mayrhofer@mayrhofer-logistik.de,Groesster Bestandskunde. Erweiterung Halle 2 diskutiert fuer 2027.
+11,Spargelhof Steininger,Bernhard Steininger,Landwirtschaft,180,aktiv,2026-02-14,08252-882-15,hof@spargel-steininger.de,Saisonbetrieb. Kuehlanlage laeuft im Sommer ueber PV.
+12,Bachmaier Baeckerei,Julia Bachmaier,Handwerk,52,beschwerde,2026-05-08,0821-336-9912,j.bachmaier@bachmaier-baeckerei.de,Reklamation Wechselrichter-Luefter laut. Stoert Backstube-Personal.
+13,Gruber Stahlbau GmbH,Thomas Gruber,Industrie,290,aktiv,2026-04-10,0731-884-2200,t.gruber@gruber-stahlbau.de,Neue Halle mit 150 kWp geplant. Statik-Pruefung laeuft.
+14,Bioland Hof Rieger,Katharina Rieger,Landwirtschaft,160,aktiv,2026-03-05,07351-48-293,k.rieger@biohof-rieger.de,Agri-PV Pilotprojekt. Beweidung unter Modulen funktioniert gut.
+15,Autohaus Kessler,Michael Kessler,Gewerbe,85,aktiv,2026-01-28,0821-992-3314,m.kessler@autohaus-kessler.de,E-Ladestationen am Autohaus geplant. PV-Erweiterung noetig.
+16,Brauerei Zum Goldenen Hirsch,Georg Brandner,Industrie,195,in_wartung,2026-05-01,08382-704-88,g.brandner@brauerei-hirsch.de,Kuehlsystem-Wartung mit PV-Anlage gekoppelt. Saisonstart Mai.
+17,Zimmerei Obermaier,Franz Obermaier,Handwerk,38,aktiv,2026-02-20,08191-335-67,f.obermaier@zimmerei-obermaier.de,Kleine Anlage aber zufriedener Kunde. Empfiehlt uns weiter.
+18,Reiterhof Sonnleitner,Maria Sonnleitner,Landwirtschaft,240,aktiv,2026-04-15,08075-913-42,m.sonnleitner@reiterhof-sonnleitner.de,Reithalle und Stallungen komplett solar. Eigenverbrauch 91 Prozent.
+19,Mueller Fensterbau GmbH,Helmut Mueller,Handwerk,72,aktiv,2026-03-22,07361-555-18,h.mueller@mueller-fensterbau.de,Produktionshalle mit Saegewerk. Hoher Tagesverbrauch ideal fuer PV.
+20,Klinik Am Rosengarten,Dr. Andrea Pfeiffer,Gewerbe,310,aktiv,2026-04-18,0821-667-9100,a.pfeiffer@klinik-rosengarten.de,24h-Betrieb. Speicher mit 120 kWh. Notstromfaehigkeit geplant.
+21,Schwabenmoebel GmbH,Robert Haas,Industrie,420,beschwerde,2026-05-10,0731-220-4455,r.haas@schwabenmoebel.de,Ertrag 20 Prozent unter Prognose. Verschattung durch Neubau nebenan.
+22,Gaertnerei Blumenfeld,Ingrid Wieser,Landwirtschaft,55,aktiv,2026-02-01,08233-81-456,i.wieser@gaertnerei-blumenfeld.de,Gewaechshaeuser teilweise mit PV-Glas. Pilotprojekt erfolgreich.
+23,Pension Alpenblick,Herbert Waldner,Gewerbe,48,aktiv,2026-01-10,08322-765-21,h.waldner@pension-alpenblick.de,Kleine Pension mit guter Suedausrichtung. Warmwasser solar.
+24,Schreinerei Wagner und Sohn,Thomas Wagner,Handwerk,86,aktiv,2026-03-30,08331-442-90,t.wagner@wagner-schreinerei.de,Referenzkunde fuer Solar-fuer-KMU-Paket. Sehr zufrieden.
+25,Landtechnik Baumgartner,Josef Baumgartner,Landwirtschaft,340,in_wartung,2026-05-05,08261-773-34,j.baumgartner@landtechnik-baumgartner.de,Grosse Maschinenhalle. Schneelast-Schaeden nach Winter. Reparatur laeuft.
