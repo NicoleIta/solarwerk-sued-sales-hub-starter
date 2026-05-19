@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { TrendingUp, Trophy, Euro } from "lucide-react";
 import { PipelineEintrag, PipelineStatus } from "@/types";
 
@@ -25,6 +26,7 @@ export default function PipelineClient({
 }: {
   eintraege: PipelineEintrag[];
 }) {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<PipelineStatus | "alle">(
     "alle"
   );
@@ -128,21 +130,35 @@ export default function PipelineClient({
             {gefiltert.map((eintrag) => (
               <tr
                 key={eintrag.id}
-                className="border-b border-gray-100 hover:bg-gray-50"
+                onClick={() => router.push(`/pipeline/${eintrag.id}`)}
+                className="cursor-pointer border-b border-gray-100 hover:bg-gray-50"
               >
                 <td className="px-4 py-3 font-medium">{eintrag.firma}</td>
                 <td className="px-4 py-3">{eintrag.ansprechpartner}</td>
                 <td className="px-4 py-3">{eintrag.branche}</td>
                 <td className="px-4 py-3">
-                  {eintrag.volumen_eur.toLocaleString("de-DE")}
+                  {(eintrag.volumen_eur ?? 0).toLocaleString("de-DE")}
                 </td>
                 <td className="px-4 py-3">{eintrag.angebotsdatum}</td>
                 <td className="px-4 py-3">
-                  <span
-                    className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${STATUS_STYLE[eintrag.status]}`}
+                  <select
+                    value={eintrag.status}
+                    onChange={async (e) => {
+                      await fetch(`/api/pipeline/${eintrag.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ status: e.target.value }),
+                      });
+                      router.refresh();
+                    }}
+                    className={`rounded-full px-2 py-1 text-xs font-medium border-0 cursor-pointer ${STATUS_STYLE[eintrag.status]}`}
                   >
-                    {STATUS_LABEL[eintrag.status]}
-                  </span>
+                    <option value="erstkontakt">Erstkontakt</option>
+                    <option value="angebot_raus">Angebot raus</option>
+                    <option value="verhandlung">Verhandlung</option>
+                    <option value="gewonnen">Gewonnen</option>
+                    <option value="verloren">Verloren</option>
+                  </select>
                 </td>
               </tr>
             ))}
