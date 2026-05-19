@@ -66,11 +66,11 @@ function NeuerPipelineEintragForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-2xl rounded-lg border border-gray-200 bg-white p-6"
+        className="max-w-2xl rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Firma
             </label>
             <input
@@ -78,11 +78,11 @@ function NeuerPipelineEintragForm() {
               name="firma"
               value={formData.firma}
               readOnly
-              className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
+              className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Ansprechpartner
             </label>
             <input
@@ -90,11 +90,11 @@ function NeuerPipelineEintragForm() {
               name="ansprechpartner"
               value={formData.ansprechpartner}
               readOnly
-              className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
+              className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Branche
             </label>
             <input
@@ -102,11 +102,11 @@ function NeuerPipelineEintragForm() {
               name="branche"
               value={formData.branche}
               readOnly
-              className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
+              className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Anlagengrösse (kWp)
             </label>
             <input
@@ -114,11 +114,11 @@ function NeuerPipelineEintragForm() {
               name="anlagengroesse_kwp"
               value={formData.anlagengroesse_kwp}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Volumen (€)
             </label>
             <input
@@ -126,11 +126,11 @@ function NeuerPipelineEintragForm() {
               name="volumen_eur"
               value={formData.volumen_eur}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Angebotsdatum
             </label>
             <input
@@ -138,18 +138,18 @@ function NeuerPipelineEintragForm() {
               name="angebotsdatum"
               value={formData.angebotsdatum}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Status
             </label>
             <select
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
             >
               <option value="erstkontakt">Erstkontakt</option>
               <option value="angebot_raus">Angebot raus</option>
@@ -161,7 +161,7 @@ function NeuerPipelineEintragForm() {
         </div>
 
         <div className="mt-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Notiz
           </label>
           <textarea
@@ -169,7 +169,7 @@ function NeuerPipelineEintragForm() {
             value={formData.notiz}
             onChange={handleChange}
             rows={3}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
           />
         </div>
 

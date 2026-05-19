@@ -51,33 +51,33 @@ export default function PipelineClient({
       <h1 className="mb-6 text-2xl font-bold">Pipeline</h1>
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
           <div className="flex items-center gap-3">
             <TrendingUp className="h-8 w-8 text-blue-500" />
             <div>
-              <p className="text-sm text-gray-500">Aktives Volumen</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Aktives Volumen</p>
               <p className="text-2xl font-bold">
                 {gesamtvolumen.toLocaleString("de-DE")} €
               </p>
             </div>
           </div>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
           <div className="flex items-center gap-3">
             <Trophy className="h-8 w-8 text-green-500" />
             <div>
-              <p className="text-sm text-gray-500">Gewonnen</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Gewonnen</p>
               <p className="text-2xl font-bold">
                 {gewonnenvolumen.toLocaleString("de-DE")} €
               </p>
             </div>
           </div>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
           <div className="flex items-center gap-3">
             <Euro className="h-8 w-8 text-orange-500" />
             <div>
-              <p className="text-sm text-gray-500">Einträge gesamt</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Einträge gesamt</p>
               <p className="text-2xl font-bold">{eintraege.length}</p>
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function PipelineClient({
           onChange={(e) =>
             setStatusFilter(e.target.value as PipelineStatus | "alle")
           }
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+          className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
         >
           <option value="alle">Alle Status</option>
           <option value="erstkontakt">Erstkontakt</option>
@@ -104,26 +104,26 @@ export default function PipelineClient({
           placeholder="Suche nach Firma oder Ansprechpartner..."
           value={suchbegriff}
           onChange={(e) => setSuchbegriff(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm sm:w-80"
+          className="rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm sm:w-80"
         />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-gray-200 bg-gray-50">
+          <thead className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th className="px-4 py-3 font-medium text-gray-600">Firma</th>
-              <th className="px-4 py-3 font-medium text-gray-600">
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Firma</th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
                 Ansprechpartner
               </th>
-              <th className="px-4 py-3 font-medium text-gray-600">Branche</th>
-              <th className="px-4 py-3 font-medium text-gray-600">
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Branche</th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
                 Volumen (€)
               </th>
-              <th className="px-4 py-3 font-medium text-gray-600">
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
                 Angebotsdatum
               </th>
-              <th className="px-4 py-3 font-medium text-gray-600">Status</th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -131,7 +131,7 @@ export default function PipelineClient({
               <tr
                 key={eintrag.id}
                 onClick={() => router.push(`/pipeline/${eintrag.id}`)}
-                className="cursor-pointer border-b border-gray-100 hover:bg-gray-50"
+                className="cursor-pointer border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <td className="px-4 py-3 font-medium">{eintrag.firma}</td>
                 <td className="px-4 py-3">{eintrag.ansprechpartner}</td>
@@ -165,7 +165,7 @@ export default function PipelineClient({
           </tbody>
         </table>
         {gefiltert.length === 0 && (
-          <p className="px-4 py-8 text-center text-gray-400">
+          <p className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
             Keine Einträge gefunden.
           </p>
         )}

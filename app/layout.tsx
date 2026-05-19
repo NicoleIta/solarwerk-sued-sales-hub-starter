@@ -20,12 +20,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de" className={`${geistSans.variable} h-full`}>
-      <body className="min-h-full flex flex-col bg-gray-50 font-[family-name:var(--font-geist-sans)] text-gray-900 antialiased">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');})()`,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col bg-gray-50 dark:bg-gray-950 font-[family-name:var(--font-geist-sans)] text-gray-900 dark:text-gray-100 antialiased">
         <Navigation />
         <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
           {children}
         </main>
-        <footer className="border-t border-gray-200 bg-white py-4 text-center text-sm text-gray-400">
+        <footer className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-4 text-center text-sm text-gray-400 dark:text-gray-500">
           Solarwerk Sued GmbH &middot; Stadtbergen
         </footer>
       </body>
