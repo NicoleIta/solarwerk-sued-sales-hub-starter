@@ -41,11 +41,11 @@ export default function BerichteClient({
         )
       : 0;
 
-  const gesamtvolumen = pipeline.reduce((sum, e) => sum + e.volumen_eur, 0);
+  const gesamtvolumen = pipeline.reduce((sum, e) => sum + (e.volumen_eur ?? 0), 0);
 
   const volumenProBranche = pipeline.reduce<Record<string, number>>(
     (acc, e) => {
-      acc[e.branche] = (acc[e.branche] ?? 0) + e.volumen_eur;
+      acc[e.branche] = (acc[e.branche] ?? 0) + (e.volumen_eur ?? 0);
       return acc;
     },
     {}

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getPipeline } from "@/lib/data";
 import PipelineClient from "./pipeline-client";
 

@@ -1,4 +1,4 @@
-import { getKunde } from "@/lib/data";
+import { getKunde, getPipeline } from "@/lib/data";
 import KundeDetailClient from "./kunde-detail-client";
 
 export default async function KundenDetailPage({
@@ -13,5 +13,9 @@ export default async function KundenDetailPage({
     return <p>Kunde nicht gefunden</p>;
   }
 
-  return <KundeDetailClient kunde={kunde} />;
+  const pipelineEintraege = getPipeline().filter(
+    (e) => e.firma === kunde.firma
+  );
+
+  return <KundeDetailClient kunde={kunde} pipelineEintraege={pipelineEintraege} />;
 }

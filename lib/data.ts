@@ -19,6 +19,11 @@ export function getKunde(id: number): Kunde | null {
   return kunden.find((k) => k.id === id) ?? null;
 }
 
+export function getPipelineEintrag(id: number): PipelineEintrag | null {
+  const eintraege = getPipeline();
+  return eintraege.find((e) => e.id === id) ?? null;
+}
+
 export function getPipeline(): PipelineEintrag[] {
   const filePath = path.join(process.cwd(), 'data', 'solarwerk_pipeline.csv');
   const csv = fs.readFileSync(filePath, 'utf-8');

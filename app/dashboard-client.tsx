@@ -112,8 +112,29 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
                 <td className="px-4 py-3">{kunde.ansprechpartner}</td>
                 <td className="px-4 py-3">{kunde.branche}</td>
                 <td className="px-4 py-3">{kunde.anlagengroesse_kwp}</td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={kunde.status} />
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <select
+                    value={kunde.status}
+                    onChange={async (e) => {
+                      await fetch(`/api/kunden/${kunde.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ status: e.target.value }),
+                      });
+                      router.refresh();
+                    }}
+                    className={`rounded-full px-2 py-1 text-xs font-medium border-0 cursor-pointer ${
+                      kunde.status === "aktiv"
+                        ? "bg-green-100 text-green-700"
+                        : kunde.status === "in_wartung"
+                          ? "bg-orange-100 text-orange-700"
+                          : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    <option value="aktiv">Aktiv</option>
+                    <option value="in_wartung">In Wartung</option>
+                    <option value="beschwerde">Beschwerde</option>
+                  </select>
                 </td>
                 <td className="px-4 py-3">{kunde.letzter_kontakt}</td>
               </tr>
