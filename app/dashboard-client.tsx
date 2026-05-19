@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users, CheckCircle, AlertTriangle } from "lucide-react";
 import { Kunde, KundenStatus } from "@/types";
+import StatusBadge from "./status-badge";
 
 export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
   const router = useRouter();
@@ -112,21 +113,7 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
                 <td className="px-4 py-3">{kunde.branche}</td>
                 <td className="px-4 py-3">{kunde.anlagengroesse_kwp}</td>
                 <td className="px-4 py-3">
-                  <span
-                    className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
-                      kunde.status === "aktiv"
-                        ? "bg-green-100 text-green-700"
-                        : kunde.status === "in_wartung"
-                          ? "bg-orange-100 text-orange-700"
-                          : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {kunde.status === "aktiv"
-                      ? "Aktiv"
-                      : kunde.status === "in_wartung"
-                        ? "In Wartung"
-                        : "Beschwerde"}
-                  </span>
+                  <StatusBadge status={kunde.status} />
                 </td>
                 <td className="px-4 py-3">{kunde.letzter_kontakt}</td>
               </tr>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Kunde } from "@/types";
+import StatusBadge from "@/app/status-badge";
 
 export default function KundeDetailClient({ kunde }: { kunde: Kunde }) {
   const [notiz, setNotiz] = useState(kunde.notiz);
@@ -21,21 +22,7 @@ export default function KundeDetailClient({ kunde }: { kunde: Kunde }) {
       <div className="rounded-lg border border-gray-200 bg-white p-6">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">{kunde.firma}</h1>
-          <span
-            className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${
-              kunde.status === "aktiv"
-                ? "bg-green-100 text-green-700"
-                : kunde.status === "in_wartung"
-                  ? "bg-orange-100 text-orange-700"
-                  : "bg-red-100 text-red-700"
-            }`}
-          >
-            {kunde.status === "aktiv"
-              ? "Aktiv"
-              : kunde.status === "in_wartung"
-                ? "In Wartung"
-                : "Beschwerde"}
-          </span>
+          <StatusBadge status={kunde.status} />
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
