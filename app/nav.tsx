@@ -9,6 +9,7 @@ export default function Navigation() {
   const links = [
     { href: "/", label: "Dashboard" },
     { href: "/pipeline", label: "Pipeline" },
+    { href: "/berichte", label: "Berichte" },
     { href: "/kunden/neu", label: "Neuer Kunde" },
   ];
 
@@ -36,7 +37,7 @@ export default function Navigation() {
         </nav>
 
         <span className="text-sm text-gray-500">
-          Eingeloggt als Felix Mustermann
+          Eingeloggt als Nicole Ita
         </span>
       </div>
     </header>
