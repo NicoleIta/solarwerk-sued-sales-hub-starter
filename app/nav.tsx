@@ -44,21 +44,23 @@ export default function Navigation() {
           Solarwerk Sued &middot; Sales-Hub
         </Link>
 
-        <nav className="flex gap-6">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`text-sm font-medium ${
-                pathname === link.href
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        {currentUser && (
+          <nav className="flex gap-6">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-sm font-medium ${
+                  pathname === link.href
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         <div className="flex items-center gap-3">
           {currentUser ? (
