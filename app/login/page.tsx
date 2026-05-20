@@ -20,6 +20,7 @@ export default function LoginPage() {
       return;
     }
     localStorage.setItem("currentUser", JSON.stringify({ id: nutzer.id, name: nutzer.name, email: nutzer.email }));
+    document.cookie = "session=1; path=/; SameSite=Strict";
     router.push("/");
   }
 

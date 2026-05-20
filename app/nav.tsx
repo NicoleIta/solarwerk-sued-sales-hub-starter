@@ -25,6 +25,7 @@ export default function Navigation() {
 
   function handleAbmelden() {
     localStorage.removeItem("currentUser");
+    document.cookie = "session=; path=/; max-age=0";
     setCurrentUser(null);
     router.push("/login");
   }
