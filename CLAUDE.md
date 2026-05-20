@@ -1,5 +1,9 @@
 # Sales-Hub Starter — CLAUDE.md
 
+## Workflow
+
+- **Wie arbeiten wir zusammen:** Erst Spec schreiben, dann Claude Code mit dem Spec prompten. Keine Implementierung ohne vorherige Spezifikation.
+
 ## Tech-Stack
 
 - **Framework:** Next.js 16 (App Router, Turbopack)
@@ -39,4 +43,4 @@ Dies ist ein Starter-Repo fuer einen KI-Kurs (Tag 42, Modul Vibe Coding). Bewuss
 - Kein `components/`-Ordner
 - Keine 404-Behandlung
 - Neuer-Kunde-Formular persistiert nicht
-- Login ist ein Mockup ohne Auth
+- Login ist funktionsfähig mit Nutzer-Authentifizierung (lib/users.ts)
