@@ -9,9 +9,14 @@ id,firma,ansprechpartner,branche,anlagengroesse_kwp,volumen_eur,angebotsdatum,st
 8,Weber Maschinenbau AG,Iris Weber,Industrie,480,415000,2026-02-14,verhandlung,Grossauftrag. Technische Klaerung Netzanschluss laeuft.
 9,Blumengrossmarkt Suedwest,Gerhard Pfaff,Gewerbe,110,98000,2026-05-02,erstkontakt,Halle mit Kuehlzellen. Stromkosten ueber 80.000 EUR p.a.
 10,Tischlerei Seefeld,Monika Seefeld,Handwerk,35,32000,2026-04-30,erstkontakt,Kleine Werkstatt. Budget knapp. Foerderprogramme pruefen.
-11,Kaeserei Allgaeuer Gold,Anton Schmid,Landwirtschaft,200,185000,2026-03-20,angebot_raus,Kaesereifung braucht konstante Kuehlung. Speicher im Angebot.
+11,Kaeserei Allgaeuer Gold,Anton Schmid,Landwirtschaft,200,185000,2026-03-20,verloren,"Kaesereifung braucht konstante Kuehlung. Speicher im Angebot.
+2026.02.20 - Leider wollte der Kunde das Angebot nicht annehmen. Er hat sich für einen anderen Anbieter entschieden."
 12,Stadtwerke Mering,Dr. Ulrich Fink,Gewerbe,650,580000,2026-01-18,gewonnen,Zuschlag erteilt. Projektstart Q3 2026. Groesstes Pipeline-Projekt.
 13,Kreativpoint,Nicole Ita,Kunsthandwerk,100,90000,2026-05-10,angebot_raus,Der Kunde wurde kontaktiert.
 14,Huber Schreinerei GmbH,Andreas Huber,Handwerk,150,135000,2026-05-20,gewonnen,"26.05.20_Wir verhandeln immer noch mit dem Kunden. Kunde ist noch unschlüssig.
 26.05.20_Der Kunde hat das Angebot/Offerte akzeptiert"
 15,ArtScheune,Max Meile,Kunsthandwerk,150,135000,2026-05-20,angebot_raus,26.05.20_Das Angebot wurde an den Kunden zugesendet.
+16,Mueller Fensterbau GmbH,Helmut Mueller,Handwerk,85,76500,2026-05-20,angebot_raus,2026.05.20 - Das Angebot wurde erstellt.
+17,Malereisterbetrieb Mirco Brückner,Mirco Brückner,Handwerk,75,67500,2026-05-20,gewonnen,"2026.05.20 - Über das Angebot muss noch verhandelt werden.
+2026.05.20 - Wir haben den Kunden gewonnen. ""Sekt steht schon kühl."""
+18,Reiterhof Sonnleitner,Maria Sonnleitner,Landwirtschaft,105,94500,2026-05-20,angebot_raus,2026.05.20 - Angebot versendet
