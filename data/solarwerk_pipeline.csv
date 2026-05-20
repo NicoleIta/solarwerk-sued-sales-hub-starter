@@ -12,3 +12,6 @@ id,firma,ansprechpartner,branche,anlagengroesse_kwp,volumen_eur,angebotsdatum,st
 11,Kaeserei Allgaeuer Gold,Anton Schmid,Landwirtschaft,200,185000,2026-03-20,angebot_raus,Kaesereifung braucht konstante Kuehlung. Speicher im Angebot.
 12,Stadtwerke Mering,Dr. Ulrich Fink,Gewerbe,650,580000,2026-01-18,gewonnen,Zuschlag erteilt. Projektstart Q3 2026. Groesstes Pipeline-Projekt.
 13,Kreativpoint,Nicole Ita,Kunsthandwerk,100,90000,2026-05-10,angebot_raus,Der Kunde wurde kontaktiert.
+14,Huber Schreinerei GmbH,Andreas Huber,Handwerk,150,135000,2026-05-20,gewonnen,"26.05.20_Wir verhandeln immer noch mit dem Kunden. Kunde ist noch unschlüssig.
+26.05.20_Der Kunde hat das Angebot/Offerte akzeptiert"
+15,ArtScheune,Max Meile,Kunsthandwerk,150,135000,2026-05-20,angebot_raus,26.05.20_Das Angebot wurde an den Kunden zugesendet.
