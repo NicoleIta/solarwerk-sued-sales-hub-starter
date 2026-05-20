@@ -1,11 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import ThemeToggle from "./theme-toggle";
+
+type SessionUser = { id: string; name: string; email: string };
 
 export default function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("currentUser");
+    if (raw) {
+      try {
+        setCurrentUser(JSON.parse(raw));
+      } catch {
+        localStorage.removeItem("currentUser");
+      }
+    }
+  }, [pathname]);
+
+  function handleAbmelden() {
+    localStorage.removeItem("currentUser");
+    setCurrentUser(null);
+    router.push("/login");
+  }
 
   const links = [
     { href: "/", label: "Dashboard" },
@@ -38,9 +60,26 @@ export default function Navigation() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Eingeloggt als Nicole Ita
-          </span>
+          {currentUser ? (
+            <>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Eingeloggt als {currentUser.name}
+              </span>
+              <button
+                onClick={handleAbmelden}
+                className="text-sm text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400"
+              >
+                Abmelden
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Anmelden
+            </Link>
+          )}
           <ThemeToggle />
         </div>
       </div>
