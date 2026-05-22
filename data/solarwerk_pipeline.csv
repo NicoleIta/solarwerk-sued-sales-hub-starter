@@ -21,3 +21,4 @@ id,firma,ansprechpartner,branche,anlagengroesse_kwp,volumen_eur,angebotsdatum,st
 2026.05.20 - Wir haben den Kunden gewonnen. ""Sekt steht schon kühl."""
 18,Reiterhof Sonnleitner,Maria Sonnleitner,Landwirtschaft,105,94500,2026-05-20,angebot_raus,2026.05.20 - Angebot versendet
 19,Bäckerei Becker GmbH,Kut Becker,Konsumgüter,80,72000,2026-05-22,angebot_raus,Angebot erstellt. Warten auf Kunden Feadback.
+20,Bäckerei Becker GmbH,Kut Becker,Konsumgüter,100,90000,2026-05-22,gewonnen,Der Kunde hat das Angebot angenommen
