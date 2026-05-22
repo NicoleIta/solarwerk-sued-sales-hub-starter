@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import FormField from "@/components/form-field";
+
+const REQUIRED_FIELDS = ["firma", "ansprechpartner", "telefon", "email"] as const;
 
 export default function NeuerKundePage() {
   const router = useRouter();
@@ -15,17 +18,41 @@ export default function NeuerKundePage() {
     email: "",
     notiz: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   function handleChange(
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (value.trim()) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+  }
+
+  function handleBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    if (REQUIRED_FIELDS.includes(name as typeof REQUIRED_FIELDS[number]) && !value.trim()) {
+      setErrors((prev) => ({ ...prev, [name]: "Pflichtfeld" }));
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const newErrors: Record<string, string> = {};
+    for (const field of REQUIRED_FIELDS) {
+      if (!formData[field].trim()) newErrors[field] = "Pflichtfeld";
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
     await fetch("/api/kunden", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -33,6 +60,13 @@ export default function NeuerKundePage() {
     });
     router.push("/");
   }
+
+  const inputClass = (field: string) =>
+    `w-full rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 ${
+      errors[field]
+        ? "border-red-500 dark:border-red-500"
+        : "border-gray-300 dark:border-gray-600"
+    }`;
 
   return (
     <div>
@@ -43,34 +77,29 @@ export default function NeuerKundePage() {
         className="max-w-2xl rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Firma
-            </label>
+          <FormField label="Firma" required error={errors.firma}>
             <input
               type="text"
               name="firma"
               value={formData.firma}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+              onBlur={handleBlur}
+              className={inputClass("firma")}
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Ansprechpartner
-            </label>
+          </FormField>
+
+          <FormField label="Ansprechpartner" required error={errors.ansprechpartner}>
             <input
               type="text"
               name="ansprechpartner"
               value={formData.ansprechpartner}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+              onBlur={handleBlur}
+              className={inputClass("ansprechpartner")}
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Branche
-            </label>
+          </FormField>
+
+          <FormField label="Branche">
             <input
               type="text"
               name="branche"
@@ -78,11 +107,9 @@ export default function NeuerKundePage() {
               onChange={handleChange}
               className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Anlagengroesse (kWp)
-            </label>
+          </FormField>
+
+          <FormField label="Anlagengroesse (kWp)">
             <input
               type="number"
               name="anlagengroesse_kwp"
@@ -90,11 +117,9 @@ export default function NeuerKundePage() {
               onChange={handleChange}
               className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Status
-            </label>
+          </FormField>
+
+          <FormField label="Status">
             <select
               name="status"
               value={formData.status}
@@ -105,44 +130,43 @@ export default function NeuerKundePage() {
               <option value="in_wartung">In Wartung</option>
               <option value="beschwerde">Beschwerde</option>
             </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Telefon
-            </label>
+          </FormField>
+
+          <FormField label="Telefon" required error={errors.telefon}>
             <input
               type="text"
               name="telefon"
               value={formData.telefon}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+              onBlur={handleBlur}
+              className={inputClass("telefon")}
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              E-Mail
-            </label>
+          </FormField>
+
+          <FormField label="E-Mail" required error={errors.email}>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
+              onBlur={handleBlur}
+              className={inputClass("email")}
+            />
+          </FormField>
+        </div>
+
+        <div className="mt-4">
+          <FormField label="Notiz">
+            <textarea
+              name="notiz"
+              value={formData.notiz}
+              onChange={handleChange}
+              rows={3}
               className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
             />
-          </div>
+          </FormField>
         </div>
-        <div className="mt-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Notiz
-          </label>
-          <textarea
-            name="notiz"
-            value={formData.notiz}
-            onChange={handleChange}
-            rows={3}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
-          />
-        </div>
+
         <div className="mt-6">
           <button
             type="submit"
