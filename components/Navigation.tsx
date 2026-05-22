@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import ThemeToggle from "./theme-toggle";
+import ThemeToggle from "@/app/theme-toggle";
 
 type SessionUser = { id: string; name: string; email: string };
 
