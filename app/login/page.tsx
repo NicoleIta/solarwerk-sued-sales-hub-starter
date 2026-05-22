@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { verifyNutzer } from "@/lib/users";
+import FormField from "@/components/form-field";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,9 +12,25 @@ export default function LoginPage() {
   const [passwort, setPasswort] = useState("");
   const [showPasswort, setShowPasswort] = useState(false);
   const [fehler, setFehler] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function handleBlurKennung() {
+    if (!kennung.trim()) setErrors((prev) => ({ ...prev, kennung: "Pflichtfeld" }));
+  }
+
+  function handleBlurPasswort() {
+    if (!passwort.trim()) setErrors((prev) => ({ ...prev, passwort: "Pflichtfeld" }));
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const newErrors: Record<string, string> = {};
+    if (!kennung.trim()) newErrors.kennung = "Pflichtfeld";
+    if (!passwort.trim()) newErrors.passwort = "Pflichtfeld";
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
     const nutzer = verifyNutzer(kennung.trim(), passwort);
     if (!nutzer) {
       setFehler("Benutzername oder Passwort falsch.");
@@ -23,6 +40,13 @@ export default function LoginPage() {
     document.cookie = "session=1; path=/; SameSite=Strict";
     router.push("/");
   }
+
+  const inputClass = (field: string) =>
+    `w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+      errors[field]
+        ? "border-red-500 dark:border-red-500"
+        : "border-gray-300 dark:border-gray-600"
+    }`;
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -37,48 +61,43 @@ export default function LoginPage() {
           Solarwerk Süd · Sales-Hub
         </p>
 
-        {/* Benutzername oder E-Mail */}
         <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Benutzername oder E-Mail
-          </label>
-          <input
-            type="text"
-            value={kennung}
-            onChange={(e) => { setKennung(e.target.value); setFehler(""); }}
-            required
-            autoComplete="username"
-            placeholder="z. B. Nicole Ita oder nicole@solarwerk-sued.de"
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        {/* Passwort mit Auge-Toggle */}
-        <div className="mb-6">
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Passwort
-          </label>
-          <div className="relative">
+          <FormField label="Benutzername oder E-Mail" required error={errors.kennung}>
             <input
-              type={showPasswort ? "text" : "password"}
-              value={passwort}
-              onChange={(e) => { setPasswort(e.target.value); setFehler(""); }}
-              required
-              autoComplete="current-password"
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="text"
+              value={kennung}
+              onChange={(e) => { setKennung(e.target.value); setFehler(""); if (e.target.value.trim()) setErrors((prev) => { const next = { ...prev }; delete next.kennung; return next; }); }}
+              onBlur={handleBlurKennung}
+              autoComplete="username"
+              placeholder="z. B. Nicole Ita oder nicole@solarwerk-sued.de"
+              className={inputClass("kennung") + " placeholder-gray-400 dark:placeholder-gray-500"}
             />
-            <button
-              type="button"
-              onClick={() => setShowPasswort((prev) => !prev)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-              aria-label={showPasswort ? "Passwort verbergen" : "Passwort anzeigen"}
-            >
-              {showPasswort ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
+          </FormField>
         </div>
 
-        {/* Fehlermeldung */}
+        <div className="mb-6">
+          <FormField label="Passwort" required error={errors.passwort}>
+            <div className="relative">
+              <input
+                type={showPasswort ? "text" : "password"}
+                value={passwort}
+                onChange={(e) => { setPasswort(e.target.value); setFehler(""); if (e.target.value.trim()) setErrors((prev) => { const next = { ...prev }; delete next.passwort; return next; }); }}
+                onBlur={handleBlurPasswort}
+                autoComplete="current-password"
+                className={inputClass("passwort") + " pr-10"}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPasswort((prev) => !prev)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                aria-label={showPasswort ? "Passwort verbergen" : "Passwort anzeigen"}
+              >
+                {showPasswort ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </FormField>
+        </div>
+
         {fehler && (
           <p className="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 px-3 py-2 text-sm text-red-600 dark:text-red-400">
             {fehler}

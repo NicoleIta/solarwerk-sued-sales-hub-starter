@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import FormField from "@/components/form-field";
 
 function NeuerPipelineEintragForm() {
   const router = useRouter();
@@ -20,6 +21,7 @@ function NeuerPipelineEintragForm() {
     status: "erstkontakt",
     notiz: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   function handleChange(
     e: React.ChangeEvent<
@@ -34,10 +36,31 @@ function NeuerPipelineEintragForm() {
       }
       return next;
     });
+    if (value.trim()) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+  }
+
+  function handleBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    if ((name === "anlagengroesse_kwp" || name === "angebotsdatum") && !value.trim()) {
+      setErrors((prev) => ({ ...prev, [name]: "Pflichtfeld" }));
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const newErrors: Record<string, string> = {};
+    if (!formData.anlagengroesse_kwp.trim()) newErrors.anlagengroesse_kwp = "Pflichtfeld";
+    if (!formData.angebotsdatum.trim()) newErrors.angebotsdatum = "Pflichtfeld";
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
     await fetch("/api/pipeline", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -49,6 +72,13 @@ function NeuerPipelineEintragForm() {
       router.push("/pipeline");
     }
   }
+
+  const inputClass = (field: string) =>
+    `w-full rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 ${
+      errors[field]
+        ? "border-red-500 dark:border-red-500"
+        : "border-gray-300 dark:border-gray-600"
+    }`;
 
   const zurueckHref = kundeId ? `/kunden/${kundeId}` : "/pipeline";
 
@@ -69,10 +99,7 @@ function NeuerPipelineEintragForm() {
         className="max-w-2xl rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Firma
-            </label>
+          <FormField label="Firma">
             <input
               type="text"
               name="firma"
@@ -80,11 +107,9 @@ function NeuerPipelineEintragForm() {
               readOnly
               className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Ansprechpartner
-            </label>
+          </FormField>
+
+          <FormField label="Ansprechpartner">
             <input
               type="text"
               name="ansprechpartner"
@@ -92,11 +117,9 @@ function NeuerPipelineEintragForm() {
               readOnly
               className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Branche
-            </label>
+          </FormField>
+
+          <FormField label="Branche">
             <input
               type="text"
               name="branche"
@@ -104,23 +127,20 @@ function NeuerPipelineEintragForm() {
               readOnly
               className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Anlagengrösse (kWp)
-            </label>
+          </FormField>
+
+          <FormField label="Anlagengrösse (kWp)" required error={errors.anlagengroesse_kwp}>
             <input
               type="number"
               name="anlagengroesse_kwp"
               value={formData.anlagengroesse_kwp}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+              onBlur={handleBlur}
+              className={inputClass("anlagengroesse_kwp")}
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Volumen (€)
-            </label>
+          </FormField>
+
+          <FormField label="Volumen (€)">
             <input
               type="number"
               name="volumen_eur"
@@ -128,23 +148,20 @@ function NeuerPipelineEintragForm() {
               onChange={handleChange}
               className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Angebotsdatum
-            </label>
+          </FormField>
+
+          <FormField label="Angebotsdatum" required error={errors.angebotsdatum}>
             <input
               type="date"
               name="angebotsdatum"
               value={formData.angebotsdatum}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+              onBlur={handleBlur}
+              className={inputClass("angebotsdatum")}
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Status
-            </label>
+          </FormField>
+
+          <FormField label="Status">
             <select
               name="status"
               value={formData.status}
@@ -157,20 +174,19 @@ function NeuerPipelineEintragForm() {
               <option value="gewonnen">Gewonnen</option>
               <option value="verloren">Verloren</option>
             </select>
-          </div>
+          </FormField>
         </div>
 
         <div className="mt-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Notiz
-          </label>
-          <textarea
-            name="notiz"
-            value={formData.notiz}
-            onChange={handleChange}
-            rows={3}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
-          />
+          <FormField label="Notiz">
+            <textarea
+              name="notiz"
+              value={formData.notiz}
+              onChange={handleChange}
+              rows={3}
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+            />
+          </FormField>
         </div>
 
         <div className="mt-6">

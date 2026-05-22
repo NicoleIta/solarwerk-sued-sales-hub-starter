@@ -5,26 +5,87 @@ import { useRouter } from "next/navigation";
 import { Users, CheckCircle, AlertTriangle } from "lucide-react";
 import { Kunde, KundenStatus } from "@/types";
 import StatusBadge from "./status-badge";
+import FilterBar from "@/components/filter-bar";
+import type { FilterValues, FilterDefinition } from "@/components/filter-bar";
+
+const STATUS_LABEL: Record<string, string> = {
+  aktiv:      "Aktiv",
+  in_wartung: "In Wartung",
+  beschwerde: "Beschwerde",
+};
 
 export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
   const router = useRouter();
-  const [statusFilter, setStatusFilter] = useState<KundenStatus | "alle">(
-    "alle"
-  );
-  const [suchbegriff, setSuchbegriff] = useState("");
+  const [filterValues, setFilterValues] = useState<FilterValues>({
+    status: "",
+    branche: "",
+    suche: "",
+  });
+
+  const branchenOptionen = Array.from(
+    new Set(
+      kunden
+        .filter((k) => {
+          const statusPasst = !filterValues.status || k.status === filterValues.status;
+          const suchPasst =
+            !filterValues.suche ||
+            k.firma.toLowerCase().includes(filterValues.suche.toLowerCase()) ||
+            k.ansprechpartner.toLowerCase().includes(filterValues.suche.toLowerCase());
+          return statusPasst && suchPasst;
+        })
+        .map((k) => k.branche)
+        .filter(Boolean)
+    )
+  ).sort().map((b) => ({ value: b, label: b }));
+
+  const statusOptionen = Array.from(
+    new Set(
+      kunden
+        .filter((k) => {
+          const branchePasst = !filterValues.branche || k.branche === filterValues.branche;
+          const suchPasst =
+            !filterValues.suche ||
+            k.firma.toLowerCase().includes(filterValues.suche.toLowerCase()) ||
+            k.ansprechpartner.toLowerCase().includes(filterValues.suche.toLowerCase());
+          return branchePasst && suchPasst;
+        })
+        .map((k) => k.status)
+    )
+  ).sort().map((s) => ({ value: s, label: STATUS_LABEL[s] ?? s }));
 
   const gesamt = kunden.length;
   const aktive = kunden.filter((k) => k.status === "aktiv").length;
   const beschwerden = kunden.filter((k) => k.status === "beschwerde").length;
 
+  const filterDefs: FilterDefinition[] = [
+    {
+      key: "status",
+      label: "Alle Status",
+      type: "select",
+      options: statusOptionen,
+    },
+    {
+      key: "branche",
+      label: "Alle Branchen",
+      type: "select",
+      options: branchenOptionen,
+    },
+    {
+      key: "suche",
+      label: "Suche nach Firma oder Ansprechpartner...",
+      type: "text",
+      className: "sm:w-80",
+    },
+  ];
+
   const gefilterteKunden = kunden.filter((k) => {
-    const statusPasst =
-      statusFilter === "alle" || k.status === statusFilter;
+    const statusPasst = !filterValues.status || k.status === filterValues.status;
+    const branchePasst = !filterValues.branche || k.branche === filterValues.branche;
     const suchPasst =
-      suchbegriff === "" ||
-      k.firma.toLowerCase().includes(suchbegriff.toLowerCase()) ||
-      k.ansprechpartner.toLowerCase().includes(suchbegriff.toLowerCase());
-    return statusPasst && suchPasst;
+      !filterValues.suche ||
+      k.firma.toLowerCase().includes(filterValues.suche.toLowerCase()) ||
+      k.ansprechpartner.toLowerCase().includes(filterValues.suche.toLowerCase());
+    return statusPasst && branchePasst && suchPasst;
   });
 
   return (
@@ -61,25 +122,11 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
         </div>
       </div>
 
-      <div className="mb-4 flex flex-col gap-4 sm:flex-row">
-        <select
-          value={statusFilter}
-          onChange={(e) =>
-            setStatusFilter(e.target.value as KundenStatus | "alle")
-          }
-          className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
-        >
-          <option value="alle">Alle Status</option>
-          <option value="aktiv">Aktiv</option>
-          <option value="in_wartung">In Wartung</option>
-          <option value="beschwerde">Beschwerde</option>
-        </select>
-        <input
-          type="text"
-          placeholder="Suche nach Firma oder Ansprechpartner..."
-          value={suchbegriff}
-          onChange={(e) => setSuchbegriff(e.target.value)}
-          className="rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm sm:w-80"
+      <div className="mb-4">
+        <FilterBar
+          filters={filterDefs}
+          values={filterValues}
+          onChange={setFilterValues}
         />
       </div>
 
