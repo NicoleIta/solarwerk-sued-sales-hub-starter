@@ -6,6 +6,7 @@ import { Users, CheckCircle, AlertTriangle } from "lucide-react";
 import { Kunde, KundenStatus } from "@/types";
 import StatusBadge from "./status-badge";
 import FilterBar from "@/components/filter-bar";
+import StatKarte from "@/components/stat-karte";
 import type { FilterValues, FilterDefinition } from "@/components/filter-bar";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -93,33 +94,9 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
-          <div className="flex items-center gap-3">
-            <Users className="h-8 w-8 text-blue-500" />
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Gesamtkunden</p>
-              <p className="text-2xl font-bold">{gesamt}</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="h-8 w-8 text-green-500" />
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Aktive Kunden</p>
-              <p className="text-2xl font-bold">{aktive}</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-8 w-8 text-red-500" />
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Beschwerden</p>
-              <p className="text-2xl font-bold">{beschwerden}</p>
-            </div>
-          </div>
-        </div>
+        <StatKarte icon={Users}         label="Gesamtkunden"  wert={gesamt}      farbe="blue"  />
+        <StatKarte icon={CheckCircle}   label="Aktive Kunden" wert={aktive}      farbe="green" />
+        <StatKarte icon={AlertTriangle} label="Beschwerden"   wert={beschwerden} farbe="red"   />
       </div>
 
       <div className="mb-4">
