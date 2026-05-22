@@ -4,22 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TrendingUp, Trophy, Euro } from "lucide-react";
 import { PipelineEintrag, PipelineStatus } from "@/types";
-
-const STATUS_LABEL: Record<PipelineStatus, string> = {
-  erstkontakt: "Erstkontakt",
-  angebot_raus: "Angebot raus",
-  verhandlung: "Verhandlung",
-  gewonnen: "Gewonnen",
-  verloren: "Verloren",
-};
-
-const STATUS_STYLE: Record<PipelineStatus, string> = {
-  erstkontakt: "bg-gray-100 text-gray-700",
-  angebot_raus: "bg-blue-100 text-blue-700",
-  verhandlung: "bg-orange-100 text-orange-700",
-  gewonnen: "bg-green-100 text-green-700",
-  verloren: "bg-red-100 text-red-700",
-};
+import { PIPELINE_LABEL, PIPELINE_STYLE } from "@/components/pipeline-status-badge";
+import StatKarte from "@/components/stat-karte";
 
 export default function PipelineClient({
   eintraege,
@@ -51,37 +37,9 @@ export default function PipelineClient({
       <h1 className="mb-6 text-2xl font-bold">Pipeline</h1>
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
-          <div className="flex items-center gap-3">
-            <TrendingUp className="h-8 w-8 text-blue-500" />
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Aktives Volumen</p>
-              <p className="text-2xl font-bold">
-                {gesamtvolumen.toLocaleString("de-DE")} €
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
-          <div className="flex items-center gap-3">
-            <Trophy className="h-8 w-8 text-green-500" />
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Gewonnen</p>
-              <p className="text-2xl font-bold">
-                {gewonnenvolumen.toLocaleString("de-DE")} €
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
-          <div className="flex items-center gap-3">
-            <Euro className="h-8 w-8 text-orange-500" />
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Einträge gesamt</p>
-              <p className="text-2xl font-bold">{eintraege.length}</p>
-            </div>
-          </div>
-        </div>
+        <StatKarte icon={TrendingUp} label="Aktives Volumen" wert={`${gesamtvolumen.toLocaleString("de-DE")} €`}  farbe="blue"   />
+        <StatKarte icon={Trophy}     label="Gewonnen"        wert={`${gewonnenvolumen.toLocaleString("de-DE")} €`} farbe="green"  />
+        <StatKarte icon={Euro}       label="Einträge gesamt" wert={eintraege.length}                               farbe="orange" />
       </div>
 
       <div className="mb-4 flex flex-col gap-4 sm:flex-row">
@@ -151,7 +109,7 @@ export default function PipelineClient({
                       });
                       router.refresh();
                     }}
-                    className={`rounded-full px-2 py-1 text-xs font-medium border-0 cursor-pointer ${STATUS_STYLE[eintrag.status]}`}
+                    className={`rounded-full px-2 py-1 text-xs font-medium border-0 cursor-pointer ${PIPELINE_STYLE[eintrag.status]}`}
                   >
                     <option value="erstkontakt">Erstkontakt</option>
                     <option value="angebot_raus">Angebot raus</option>

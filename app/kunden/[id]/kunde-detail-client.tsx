@@ -3,24 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { Kunde, PipelineEintrag, PipelineStatus } from "@/types";
+import { Kunde, PipelineEintrag } from "@/types";
 import StatusBadge from "@/app/status-badge";
-
-const PIPELINE_LABEL: Record<PipelineStatus, string> = {
-  erstkontakt: "Erstkontakt",
-  angebot_raus: "Angebot raus",
-  verhandlung: "Verhandlung",
-  gewonnen: "Gewonnen",
-  verloren: "Verloren",
-};
-
-const PIPELINE_STYLE: Record<PipelineStatus, string> = {
-  erstkontakt: "bg-gray-100 text-gray-700",
-  angebot_raus: "bg-blue-100 text-blue-700",
-  verhandlung: "bg-orange-100 text-orange-700",
-  gewonnen: "bg-green-100 text-green-700",
-  verloren: "bg-red-100 text-red-700",
-};
+import InfoField from "@/components/info-field";
+import PipelineStatusBadge from "@/components/pipeline-status-badge";
 
 export default function KundeDetailClient({
   kunde,
@@ -48,30 +34,12 @@ export default function KundeDetailClient({
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Ansprechpartner</p>
-            <p className="font-medium">{kunde.ansprechpartner}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Branche</p>
-            <p className="font-medium">{kunde.branche}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Anlagengroesse</p>
-            <p className="font-medium">{kunde.anlagengroesse_kwp} kWp</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Letzter Kontakt</p>
-            <p className="font-medium">{kunde.letzter_kontakt}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Telefon</p>
-            <p className="font-medium">{kunde.telefon}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">E-Mail</p>
-            <p className="font-medium">{kunde.email}</p>
-          </div>
+          <InfoField label="Ansprechpartner" value={kunde.ansprechpartner} />
+          <InfoField label="Branche"         value={kunde.branche} />
+          <InfoField label="Anlagengroesse"  value={`${kunde.anlagengroesse_kwp} kWp`} />
+          <InfoField label="Letzter Kontakt" value={kunde.letzter_kontakt} />
+          <InfoField label="Telefon"         value={kunde.telefon} />
+          <InfoField label="E-Mail"          value={kunde.email} />
         </div>
 
         <div className="mt-6">
@@ -116,9 +84,7 @@ export default function KundeDetailClient({
               {pipelineEintraege.map((e) => (
                 <tr key={e.id} className="border-t border-gray-100 dark:border-gray-700">
                   <td className="px-6 py-3">
-                    <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${PIPELINE_STYLE[e.status]}`}>
-                      {PIPELINE_LABEL[e.status]}
-                    </span>
+                    <PipelineStatusBadge status={e.status} />
                   </td>
                   <td className="px-6 py-3">{(e.volumen_eur ?? 0).toLocaleString("de-DE")} €</td>
                   <td className="px-6 py-3">{e.angebotsdatum}</td>
