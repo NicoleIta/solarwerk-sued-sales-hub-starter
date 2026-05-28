@@ -26,3 +26,24 @@ export async function PATCH(
 
   return Response.json({ ok: true });
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  const filePath = path.join(process.cwd(), "data", "solarwerk_kunden.csv");
+  const csv = fs.readFileSync(filePath, "utf-8");
+  const result = Papa.parse<Kunde>(csv, {
+    header: true,
+    dynamicTyping: true,
+    skipEmptyLines: true,
+  });
+
+  const kunden = result.data.filter((k) => k.id !== Number(id));
+
+  fs.writeFileSync(filePath, Papa.unparse(kunden), "utf-8");
+
+  return Response.json({ ok: true });
+}
