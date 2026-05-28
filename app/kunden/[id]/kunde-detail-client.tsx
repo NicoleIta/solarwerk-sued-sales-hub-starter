@@ -8,6 +8,7 @@ import { Kunde, KundenStatus, PipelineEintrag } from "@/types";
 import StatusBadge from "@/app/status-badge";
 import InfoField from "@/components/info-field";
 import PipelineStatusBadge from "@/components/pipeline-status-badge";
+import { supabase } from "@/lib/supabase";
 
 export default function KundeDetailClient({
   kunde,
@@ -39,10 +40,9 @@ export default function KundeDetailClient({
     }
     setIsLoading(true);
     setError(null);
-    const res = await fetch(`/api/kunden/${kunde.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const { error: sbError } = await supabase
+      .from("kunden")
+      .update({
         firma: formData.firma,
         ansprechpartner: formData.ansprechpartner,
         branche: formData.branche,
@@ -52,11 +52,11 @@ export default function KundeDetailClient({
         telefon: formData.telefon,
         email: formData.email,
         notiz: formData.notiz,
-      }),
-    });
+      })
+      .eq("id", kunde.supabase_uuid!);
     setIsLoading(false);
-    if (!res.ok) {
-      setError("Fehler beim Speichern.");
+    if (sbError) {
+      setError("Fehler beim Speichern: " + sbError.message);
       return;
     }
     setIsEditing(false);
@@ -67,10 +67,13 @@ export default function KundeDetailClient({
     if (!window.confirm("Wirklich löschen?")) return;
     setIsLoading(true);
     setError(null);
-    const res = await fetch(`/api/kunden/${kunde.id}`, { method: "DELETE" });
+    const { error: sbError } = await supabase
+      .from("kunden")
+      .delete()
+      .eq("id", kunde.supabase_uuid!);
     setIsLoading(false);
-    if (!res.ok) {
-      setError("Fehler beim Löschen.");
+    if (sbError) {
+      setError("Fehler beim Löschen: " + sbError.message);
       return;
     }
     router.push("/");
