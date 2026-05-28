@@ -4,6 +4,7 @@ export type PipelineStatus = 'erstkontakt' | 'angebot_raus' | 'verhandlung' | 'g
 
 export interface Kunde {
   id: number;
+  supabase_uuid?: string;
   firma: string;
   ansprechpartner: string;
   branche: string;
