@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Users, CheckCircle, AlertTriangle } from "lucide-react";
+import { Users, CheckCircle, AlertTriangle, Wrench } from "lucide-react";
 import { Kunde } from "@/types";
 import FilterBar from "@/components/filter-bar";
 import StatKarte from "@/components/stat-karte";
@@ -26,6 +26,8 @@ export default function DashboardClient() {
     suche: "",
   });
   const [debouncedSuche, setDebouncedSuche] = useState("");
+  const [kpis, setKpis] = useState<{ gesamt: number | null; aktive: number | null; inWartung: number | null; beschwerden: number | null }>({ gesamt: null, aktive: null, inWartung: null, beschwerden: null });
+  const [kpisLaden, setKpisLaden] = useState(true);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSuche(filterValues.suche), 300);
@@ -69,6 +71,34 @@ export default function DashboardClient() {
     fetchKunden();
   }, [filterValues.status, filterValues.branche, debouncedSuche]);
 
+  useEffect(() => {
+    async function fetchKpis() {
+      setKpisLaden(true);
+      function baseQuery() {
+        let q = supabase.from("kunden").select("*", { count: "exact", head: true });
+        if (filterValues.status) q = q.eq("status", filterValues.status);
+        if (filterValues.branche) q = q.eq("branche", filterValues.branche);
+        if (debouncedSuche) q = q.ilike("firma", `%${debouncedSuche}%`);
+        return q;
+      }
+      const gesamtQuery = supabase.from("kunden").select("*", { count: "exact", head: true });
+      const [g, a, w, b] = await Promise.all([
+        gesamtQuery,
+        baseQuery().eq("status", "aktiv"),
+        baseQuery().eq("status", "in_wartung"),
+        baseQuery().eq("status", "beschwerde"),
+      ]);
+      setKpis({
+        gesamt: g.error ? null : (g.count ?? 0),
+        aktive: a.error ? null : (a.count ?? 0),
+        inWartung: w.error ? null : (w.count ?? 0),
+        beschwerden: b.error ? null : (b.count ?? 0),
+      });
+      setKpisLaden(false);
+    }
+    fetchKpis();
+  }, [filterValues.status, filterValues.branche, debouncedSuche]);
+
   const branchenOptionen = Array.from(new Set(kunden.map((k) => k.branche).filter(Boolean)))
     .sort()
     .map((b) => ({ value: b, label: b }));
@@ -76,10 +106,6 @@ export default function DashboardClient() {
   const statusOptionen = Array.from(new Set(kunden.map((k) => k.status)))
     .sort()
     .map((s) => ({ value: s, label: STATUS_LABEL[s] ?? s }));
-
-  const gesamt = kunden.length;
-  const aktive = kunden.filter((k) => k.status === "aktiv").length;
-  const beschwerden = kunden.filter((k) => k.status === "beschwerde").length;
 
   const STATUS_BUTTONS: { value: string; label: string }[] = [
     { value: "", label: "Alle" },
@@ -103,14 +129,22 @@ export default function DashboardClient() {
     },
   ];
 
+  function kpiWert(wert: number | null) {
+    if (kpisLaden) return <span className="block h-5 w-10 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />;
+    if (wert === null) return <span className="text-gray-400">—</span>;
+    if (wert === 0) return <span>0 <span className="text-xs text-gray-400 font-normal">Keine Treffer</span></span>;
+    return wert;
+  }
+
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
 
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatKarte icon={Users}         label="Gesamtkunden"  wert={gesamt}      farbe="blue"  />
-        <StatKarte icon={CheckCircle}   label="Aktive Kunden" wert={aktive}      farbe="green" />
-        <StatKarte icon={AlertTriangle} label="Beschwerden"   wert={beschwerden} farbe="red"   />
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <StatKarte icon={Users}         label="Gesamtkunden"  wert={kpiWert(kpis.gesamt)}      farbe="blue"   />
+        <StatKarte icon={CheckCircle}   label="Aktive Kunden" wert={kpiWert(kpis.aktive)}      farbe="green"  />
+        <StatKarte icon={Wrench}        label="In Wartung"    wert={kpiWert(kpis.inWartung)}   farbe="orange" />
+        <StatKarte icon={AlertTriangle} label="Beschwerden"   wert={kpiWert(kpis.beschwerden)} farbe="red"    />
       </div>
 
       <div className="mb-4 flex flex-col gap-3">
