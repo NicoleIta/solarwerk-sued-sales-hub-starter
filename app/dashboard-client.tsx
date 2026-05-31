@@ -81,13 +81,14 @@ export default function DashboardClient() {
   const aktive = kunden.filter((k) => k.status === "aktiv").length;
   const beschwerden = kunden.filter((k) => k.status === "beschwerde").length;
 
+  const STATUS_BUTTONS: { value: string; label: string }[] = [
+    { value: "", label: "Alle" },
+    { value: "aktiv", label: "Aktiv" },
+    { value: "in_wartung", label: "In Wartung" },
+    { value: "beschwerde", label: "Beschwerde" },
+  ];
+
   const filterDefs: FilterDefinition[] = [
-    {
-      key: "status",
-      label: "Alle Status",
-      type: "select",
-      options: statusOptionen,
-    },
     {
       key: "branche",
       label: "Alle Branchen",
@@ -112,7 +113,22 @@ export default function DashboardClient() {
         <StatKarte icon={AlertTriangle} label="Beschwerden"   wert={beschwerden} farbe="red"   />
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-col gap-3">
+        <div className="flex flex-wrap gap-1">
+          {STATUS_BUTTONS.map((btn) => (
+            <button
+              key={btn.value}
+              onClick={() => setFilterValues((prev) => ({ ...prev, status: btn.value }))}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                filterValues.status === btn.value
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+              }`}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
         <FilterBar
           filters={filterDefs}
           values={filterValues}
