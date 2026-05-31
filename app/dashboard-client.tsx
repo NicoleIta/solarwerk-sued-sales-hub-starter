@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Users, CheckCircle, AlertTriangle } from "lucide-react";
-import { Kunde, KundenStatus } from "@/types";
-import StatusBadge from "./status-badge";
+import { Kunde } from "@/types";
 import FilterBar from "@/components/filter-bar";
 import StatKarte from "@/components/stat-karte";
 import type { FilterValues, FilterDefinition } from "@/components/filter-bar";
+import { supabase } from "@/lib/supabase";
 
 const STATUS_LABEL: Record<string, string> = {
   aktiv:      "Aktiv",
@@ -15,44 +15,67 @@ const STATUS_LABEL: Record<string, string> = {
   beschwerde: "Beschwerde",
 };
 
-export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
+export default function DashboardClient() {
   const router = useRouter();
+  const [kunden, setKunden] = useState<Kunde[]>([]);
+  const [laden, setLaden] = useState(true);
+  const [fehler, setFehler] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<FilterValues>({
     status: "",
     branche: "",
     suche: "",
   });
+  const [debouncedSuche, setDebouncedSuche] = useState("");
 
-  const branchenOptionen = Array.from(
-    new Set(
-      kunden
-        .filter((k) => {
-          const statusPasst = !filterValues.status || k.status === filterValues.status;
-          const suchPasst =
-            !filterValues.suche ||
-            k.firma.toLowerCase().includes(filterValues.suche.toLowerCase()) ||
-            k.ansprechpartner.toLowerCase().includes(filterValues.suche.toLowerCase());
-          return statusPasst && suchPasst;
-        })
-        .map((k) => k.branche)
-        .filter(Boolean)
-    )
-  ).sort().map((b) => ({ value: b, label: b }));
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSuche(filterValues.suche), 300);
+    return () => clearTimeout(t);
+  }, [filterValues.suche]);
 
-  const statusOptionen = Array.from(
-    new Set(
-      kunden
-        .filter((k) => {
-          const branchePasst = !filterValues.branche || k.branche === filterValues.branche;
-          const suchPasst =
-            !filterValues.suche ||
-            k.firma.toLowerCase().includes(filterValues.suche.toLowerCase()) ||
-            k.ansprechpartner.toLowerCase().includes(filterValues.suche.toLowerCase());
-          return branchePasst && suchPasst;
-        })
-        .map((k) => k.status)
-    )
-  ).sort().map((s) => ({ value: s, label: STATUS_LABEL[s] ?? s }));
+  useEffect(() => {
+    async function fetchKunden() {
+      setLaden(true);
+      setFehler(null);
+      let query = supabase
+        .from("kunden")
+        .select("*")
+        .order("firma", { ascending: true });
+      if (filterValues.status) query = query.eq("status", filterValues.status);
+      if (filterValues.branche) query = query.eq("branche", filterValues.branche);
+      if (debouncedSuche) query = query.ilike("firma", `%${debouncedSuche}%`);
+      const { data, error } = await query;
+      if (error) {
+        setFehler("Laden fehlgeschlagen.");
+        setKunden([]);
+      } else {
+        setKunden(
+          (data ?? []).map((k) => ({
+            id: k.int_id,
+            supabase_uuid: k.id,
+            firma: k.firma,
+            ansprechpartner: k.ansprechpartner,
+            branche: k.branche,
+            anlagengroesse_kwp: k.anlagengroesse_kwp,
+            status: k.status,
+            letzter_kontakt: k.letzter_kontakt,
+            telefon: k.telefon,
+            email: k.email,
+            notiz: k.notiz,
+          }))
+        );
+      }
+      setLaden(false);
+    }
+    fetchKunden();
+  }, [filterValues.status, filterValues.branche, debouncedSuche]);
+
+  const branchenOptionen = Array.from(new Set(kunden.map((k) => k.branche).filter(Boolean)))
+    .sort()
+    .map((b) => ({ value: b, label: b }));
+
+  const statusOptionen = Array.from(new Set(kunden.map((k) => k.status)))
+    .sort()
+    .map((s) => ({ value: s, label: STATUS_LABEL[s] ?? s }));
 
   const gesamt = kunden.length;
   const aktive = kunden.filter((k) => k.status === "aktiv").length;
@@ -79,16 +102,6 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
     },
   ];
 
-  const gefilterteKunden = kunden.filter((k) => {
-    const statusPasst = !filterValues.status || k.status === filterValues.status;
-    const branchePasst = !filterValues.branche || k.branche === filterValues.branche;
-    const suchPasst =
-      !filterValues.suche ||
-      k.firma.toLowerCase().includes(filterValues.suche.toLowerCase()) ||
-      k.ansprechpartner.toLowerCase().includes(filterValues.suche.toLowerCase());
-    return statusPasst && branchePasst && suchPasst;
-  });
-
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
@@ -107,26 +120,26 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
         />
       </div>
 
+      {fehler && (
+        <p className="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+          {fehler}
+        </p>
+      )}
+
       <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <tr>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Firma</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
-                Ansprechpartner
-              </th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Ansprechpartner</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Branche</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
-                Anlagengroesse (kWp)
-              </th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Anlagengroesse (kWp)</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
-                Letzter Kontakt
-              </th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Letzter Kontakt</th>
             </tr>
           </thead>
           <tbody>
-            {gefilterteKunden.map((kunde) => (
+            {kunden.map((kunde) => (
               <tr
                 key={kunde.id}
                 onClick={() => router.push(`/kunden/${kunde.id}`)}
@@ -165,9 +178,14 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
             ))}
           </tbody>
         </table>
-        {gefilterteKunden.length === 0 && (
+        {!laden && kunden.length === 0 && !fehler && (
           <p className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
             Keine Kunden gefunden.
+          </p>
+        )}
+        {laden && (
+          <p className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
+            Laden...
           </p>
         )}
       </div>
