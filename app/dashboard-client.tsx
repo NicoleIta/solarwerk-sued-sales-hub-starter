@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Users, CheckCircle, AlertTriangle } from "lucide-react";
-import { Kunde, KundenStatus } from "@/types";
-import StatusBadge from "./status-badge";
+import { Users, CheckCircle, AlertTriangle, Wrench } from "lucide-react";
+import { Kunde } from "@/types";
 import FilterBar from "@/components/filter-bar";
 import StatKarte from "@/components/stat-karte";
 import type { FilterValues, FilterDefinition } from "@/components/filter-bar";
+import { supabase } from "@/lib/supabase";
 
 const STATUS_LABEL: Record<string, string> = {
   aktiv:      "Aktiv",
@@ -15,56 +15,106 @@ const STATUS_LABEL: Record<string, string> = {
   beschwerde: "Beschwerde",
 };
 
-export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
+export default function DashboardClient() {
   const router = useRouter();
+  const [kunden, setKunden] = useState<Kunde[]>([]);
+  const [laden, setLaden] = useState(true);
+  const [fehler, setFehler] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<FilterValues>({
     status: "",
     branche: "",
     suche: "",
   });
+  const [debouncedSuche, setDebouncedSuche] = useState("");
+  const [kpis, setKpis] = useState<{ gesamt: number | null; aktive: number | null; inWartung: number | null; beschwerden: number | null }>({ gesamt: null, aktive: null, inWartung: null, beschwerden: null });
+  const [kpisLaden, setKpisLaden] = useState(true);
 
-  const branchenOptionen = Array.from(
-    new Set(
-      kunden
-        .filter((k) => {
-          const statusPasst = !filterValues.status || k.status === filterValues.status;
-          const suchPasst =
-            !filterValues.suche ||
-            k.firma.toLowerCase().includes(filterValues.suche.toLowerCase()) ||
-            k.ansprechpartner.toLowerCase().includes(filterValues.suche.toLowerCase());
-          return statusPasst && suchPasst;
-        })
-        .map((k) => k.branche)
-        .filter(Boolean)
-    )
-  ).sort().map((b) => ({ value: b, label: b }));
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSuche(filterValues.suche), 300);
+    return () => clearTimeout(t);
+  }, [filterValues.suche]);
 
-  const statusOptionen = Array.from(
-    new Set(
-      kunden
-        .filter((k) => {
-          const branchePasst = !filterValues.branche || k.branche === filterValues.branche;
-          const suchPasst =
-            !filterValues.suche ||
-            k.firma.toLowerCase().includes(filterValues.suche.toLowerCase()) ||
-            k.ansprechpartner.toLowerCase().includes(filterValues.suche.toLowerCase());
-          return branchePasst && suchPasst;
-        })
-        .map((k) => k.status)
-    )
-  ).sort().map((s) => ({ value: s, label: STATUS_LABEL[s] ?? s }));
+  useEffect(() => {
+    async function fetchKunden() {
+      setLaden(true);
+      setFehler(null);
+      let query = supabase
+        .from("kunden")
+        .select("*")
+        .order("firma", { ascending: true });
+      if (filterValues.status) query = query.eq("status", filterValues.status);
+      if (filterValues.branche) query = query.eq("branche", filterValues.branche);
+      if (debouncedSuche) query = query.ilike("firma", `%${debouncedSuche}%`);
+      const { data, error } = await query;
+      if (error) {
+        setFehler("Laden fehlgeschlagen.");
+        setKunden([]);
+      } else {
+        setKunden(
+          (data ?? []).map((k) => ({
+            id: k.int_id,
+            supabase_uuid: k.id,
+            firma: k.firma,
+            ansprechpartner: k.ansprechpartner,
+            branche: k.branche,
+            anlagengroesse_kwp: k.anlagengroesse_kwp,
+            status: k.status,
+            letzter_kontakt: k.letzter_kontakt,
+            telefon: k.telefon,
+            email: k.email,
+            notiz: k.notiz,
+          }))
+        );
+      }
+      setLaden(false);
+    }
+    fetchKunden();
+  }, [filterValues.status, filterValues.branche, debouncedSuche]);
 
-  const gesamt = kunden.length;
-  const aktive = kunden.filter((k) => k.status === "aktiv").length;
-  const beschwerden = kunden.filter((k) => k.status === "beschwerde").length;
+  useEffect(() => {
+    async function fetchKpis() {
+      setKpisLaden(true);
+      function baseQuery() {
+        let q = supabase.from("kunden").select("*", { count: "exact", head: true });
+        if (filterValues.status) q = q.eq("status", filterValues.status);
+        if (filterValues.branche) q = q.eq("branche", filterValues.branche);
+        if (debouncedSuche) q = q.ilike("firma", `%${debouncedSuche}%`);
+        return q;
+      }
+      const gesamtQuery = supabase.from("kunden").select("*", { count: "exact", head: true });
+      const [g, a, w, b] = await Promise.all([
+        gesamtQuery,
+        baseQuery().eq("status", "aktiv"),
+        baseQuery().eq("status", "in_wartung"),
+        baseQuery().eq("status", "beschwerde"),
+      ]);
+      setKpis({
+        gesamt: g.error ? null : (g.count ?? 0),
+        aktive: a.error ? null : (a.count ?? 0),
+        inWartung: w.error ? null : (w.count ?? 0),
+        beschwerden: b.error ? null : (b.count ?? 0),
+      });
+      setKpisLaden(false);
+    }
+    fetchKpis();
+  }, [filterValues.status, filterValues.branche, debouncedSuche]);
+
+  const branchenOptionen = Array.from(new Set(kunden.map((k) => k.branche).filter(Boolean)))
+    .sort()
+    .map((b) => ({ value: b, label: b }));
+
+  const statusOptionen = Array.from(new Set(kunden.map((k) => k.status)))
+    .sort()
+    .map((s) => ({ value: s, label: STATUS_LABEL[s] ?? s }));
+
+  const STATUS_BUTTONS: { value: string; label: string }[] = [
+    { value: "", label: "Alle" },
+    { value: "aktiv", label: "Aktiv" },
+    { value: "in_wartung", label: "In Wartung" },
+    { value: "beschwerde", label: "Beschwerde" },
+  ];
 
   const filterDefs: FilterDefinition[] = [
-    {
-      key: "status",
-      label: "Alle Status",
-      type: "select",
-      options: statusOptionen,
-    },
     {
       key: "branche",
       label: "Alle Branchen",
@@ -79,27 +129,40 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
     },
   ];
 
-  const gefilterteKunden = kunden.filter((k) => {
-    const statusPasst = !filterValues.status || k.status === filterValues.status;
-    const branchePasst = !filterValues.branche || k.branche === filterValues.branche;
-    const suchPasst =
-      !filterValues.suche ||
-      k.firma.toLowerCase().includes(filterValues.suche.toLowerCase()) ||
-      k.ansprechpartner.toLowerCase().includes(filterValues.suche.toLowerCase());
-    return statusPasst && branchePasst && suchPasst;
-  });
+  function kpiWert(wert: number | null) {
+    if (kpisLaden) return <span className="block h-5 w-10 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />;
+    if (wert === null) return <span className="text-gray-400">—</span>;
+    if (wert === 0) return <span>0 <span className="text-xs text-gray-400 font-normal">Keine Treffer</span></span>;
+    return wert;
+  }
 
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
 
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatKarte icon={Users}         label="Gesamtkunden"  wert={gesamt}      farbe="blue"  />
-        <StatKarte icon={CheckCircle}   label="Aktive Kunden" wert={aktive}      farbe="green" />
-        <StatKarte icon={AlertTriangle} label="Beschwerden"   wert={beschwerden} farbe="red"   />
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <StatKarte icon={Users}         label="Gesamtkunden"  wert={kpiWert(kpis.gesamt)}      farbe="blue"   />
+        <StatKarte icon={CheckCircle}   label="Aktive Kunden" wert={kpiWert(kpis.aktive)}      farbe="green"  />
+        <StatKarte icon={Wrench}        label="In Wartung"    wert={kpiWert(kpis.inWartung)}   farbe="orange" />
+        <StatKarte icon={AlertTriangle} label="Beschwerden"   wert={kpiWert(kpis.beschwerden)} farbe="red"    />
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-col gap-3">
+        <div className="flex flex-wrap gap-1">
+          {STATUS_BUTTONS.map((btn) => (
+            <button
+              key={btn.value}
+              onClick={() => setFilterValues((prev) => ({ ...prev, status: btn.value }))}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                filterValues.status === btn.value
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+              }`}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
         <FilterBar
           filters={filterDefs}
           values={filterValues}
@@ -107,26 +170,26 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
         />
       </div>
 
+      {fehler && (
+        <p className="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+          {fehler}
+        </p>
+      )}
+
       <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <tr>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Firma</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
-                Ansprechpartner
-              </th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Ansprechpartner</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Branche</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
-                Anlagengroesse (kWp)
-              </th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Anlagengroesse (kWp)</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
-                Letzter Kontakt
-              </th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Letzter Kontakt</th>
             </tr>
           </thead>
           <tbody>
-            {gefilterteKunden.map((kunde) => (
+            {kunden.map((kunde) => (
               <tr
                 key={kunde.id}
                 onClick={() => router.push(`/kunden/${kunde.id}`)}
@@ -165,9 +228,14 @@ export default function DashboardClient({ kunden }: { kunden: Kunde[] }) {
             ))}
           </tbody>
         </table>
-        {gefilterteKunden.length === 0 && (
+        {!laden && kunden.length === 0 && !fehler && (
           <p className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
             Keine Kunden gefunden.
+          </p>
+        )}
+        {laden && (
+          <p className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
+            Laden...
           </p>
         )}
       </div>
