@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, Trophy, Euro } from "lucide-react";
+import { TrendingUp, FileText, XCircle } from "lucide-react";
 import { PipelineStatus } from "@/types";
 import { PIPELINE_STYLE } from "@/components/pipeline-status-badge";
 import StatKarte from "@/components/stat-karte";
@@ -37,6 +37,8 @@ export default function PipelineClient() {
   const [debouncedSuche, setDebouncedSuche] = useState("");
   const [laden, setLaden] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [kpis, setKpis] = useState<{ aktivesVolumen: number | null; dynamischCount: number | null; dynamischVolumen: number | null }>({ aktivesVolumen: null, dynamischCount: null, dynamischVolumen: null });
+  const [kpisLaden, setKpisLaden] = useState(true);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSuche(suchbegriff), 300);
@@ -65,19 +67,74 @@ export default function PipelineClient() {
     fetchEintraege();
   }, [statusFilter, debouncedSuche]);
 
-  const aktive = eintraege.filter((e) => e.status !== "verloren");
-  const gewonnen = eintraege.filter((e) => e.status === "gewonnen");
-  const gesamtvolumen = aktive.reduce((sum, e) => sum + (e.betrag ?? 0), 0);
-  const gewonnenvolumen = gewonnen.reduce((sum, e) => sum + (e.betrag ?? 0), 0);
+  useEffect(() => {
+    async function fetchKpis() {
+      setKpisLaden(true);
+      function baseQuery() {
+        let q = supabase.from("pipeline").select("*", { count: "exact", head: true });
+        if (statusFilter !== "alle") q = q.eq("status", statusFilter);
+        if (debouncedSuche) q = q.ilike("titel", `%${debouncedSuche}%`);
+        return q;
+      }
+      const dynCountQuery = statusFilter === "alle"
+        ? supabase.from("pipeline").select("*", { count: "exact", head: true })
+        : supabase.from("pipeline").select("*", { count: "exact", head: true }).eq("status", statusFilter);
+      const dynVolQuery = statusFilter === "alle"
+        ? supabase.from("pipeline").select("betrag")
+        : supabase.from("pipeline").select("betrag").eq("status", statusFilter);
+
+      const [vol, dynCount, dynVol] = await Promise.all([
+        supabase.from("pipeline").select("betrag").neq("status", "verloren"),
+        dynCountQuery,
+        dynVolQuery,
+      ]);
+      setKpis({
+        aktivesVolumen: vol.error ? null : (vol.data ?? []).reduce((s, e) => s + (e.betrag ?? 0), 0),
+        dynamischCount: dynCount.error ? null : (dynCount.count ?? 0),
+        dynamischVolumen: dynVol.error ? null : (dynVol.data ?? []).reduce((s, e) => s + (e.betrag ?? 0), 0),
+      });
+      setKpisLaden(false);
+    }
+    fetchKpis();
+  }, [statusFilter, debouncedSuche]);
+
+  function kpiWert(wert: number | null) {
+    if (kpisLaden) return <span className="block h-5 w-10 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />;
+    if (wert === null) return <span className="text-gray-400">—</span>;
+    if (wert === 0) return <span>0 <span className="text-xs text-gray-400 font-normal">Keine Treffer</span></span>;
+    return wert;
+  }
+
+  function euroWert(wert: number | null) {
+    if (kpisLaden) return <span className="block h-5 w-16 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />;
+    if (wert === null) return <span className="text-gray-400">—</span>;
+    return `${wert.toLocaleString("de-DE")} €`;
+  }
+
+  const STATUS_INFO: Record<PipelineStatus | "alle", { label: string; farbe: "blue" | "green" | "red" | "orange" }> = {
+    alle:         { label: "Einträge gesamt", farbe: "blue"   },
+    erstkontakt:  { label: "Erstkontakt",     farbe: "blue"   },
+    angebot_raus: { label: "Angebot raus",    farbe: "orange" },
+    verhandlung:  { label: "Verhandlung",     farbe: "orange" },
+    gewonnen:     { label: "Gewonnen",        farbe: "green"  },
+    verloren:     { label: "Verloren",        farbe: "red"    },
+  };
+
+  const dynInfo = STATUS_INFO[statusFilter];
+  const dealsWert = kpiWert(kpis.dynamischCount);
+  // Betrags-Karte: bei Erstkontakt — anzeigen, sonst Betrag €
+  const dynWert = statusFilter === "erstkontakt"
+    ? <span className="text-gray-400">—</span>
+    : euroWert(kpis.dynamischVolumen);
 
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Pipeline</h1>
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatKarte icon={TrendingUp} label="Aktives Volumen" wert={`${gesamtvolumen.toLocaleString("de-DE")} €`}  farbe="blue"   />
-        <StatKarte icon={Trophy}     label="Gewonnen"        wert={`${gewonnenvolumen.toLocaleString("de-DE")} €`} farbe="green"  />
-        <StatKarte icon={Euro}       label="Einträge gesamt" wert={eintraege.length}                               farbe="orange" />
+        <StatKarte icon={TrendingUp} label="Aktives Volumen"  wert={euroWert(kpis.aktivesVolumen)}  farbe="blue"          />
+        <StatKarte icon={XCircle}    label={dynInfo.label}    wert={dynWert}                         farbe={dynInfo.farbe} />
+        <StatKarte icon={FileText}   label="Deals"            wert={dealsWert}                       farbe={dynInfo.farbe} />
       </div>
 
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center">
