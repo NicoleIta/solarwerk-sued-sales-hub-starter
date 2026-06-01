@@ -11,16 +11,28 @@ export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setCurrentUser(session?.user ?? null);
+      if (session?.user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+        setIsAdmin(data?.role === "admin");
+      } else {
+        setIsAdmin(false);
+      }
     });
   }, [pathname]);
 
   async function handleAbmelden() {
     await supabase.auth.signOut();
     setCurrentUser(null);
+    setIsAdmin(false);
     router.push("/login");
   }
 
@@ -29,6 +41,7 @@ export default function Navigation() {
     { href: "/pipeline", label: "Pipeline" },
     { href: "/berichte", label: "Berichte" },
     { href: "/kunden/neu", label: "Neuer Kunde" },
+    ...(isAdmin ? [{ href: "/admin/users", label: "Benutzerverwaltung" }] : []),
   ];
 
   return (
