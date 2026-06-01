@@ -18,6 +18,7 @@ export interface Kunde {
 
 export interface PipelineEintrag {
   id: number;
+  supabase_uuid?: string;
   firma: string;
   ansprechpartner: string;
   branche: string;

@@ -9,12 +9,6 @@ import StatKarte from "@/components/stat-karte";
 import type { FilterValues, FilterDefinition } from "@/components/filter-bar";
 import { supabase } from "@/lib/supabase";
 
-const STATUS_LABEL: Record<string, string> = {
-  aktiv:      "Aktiv",
-  in_wartung: "In Wartung",
-  beschwerde: "Beschwerde",
-};
-
 export default function DashboardClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -104,10 +98,6 @@ export default function DashboardClient() {
   const branchenOptionen = Array.from(new Set(kunden.map((k) => k.branche).filter(Boolean)))
     .sort()
     .map((b) => ({ value: b, label: b }));
-
-  const statusOptionen = Array.from(new Set(kunden.map((k) => k.status)))
-    .sort()
-    .map((s) => ({ value: s, label: STATUS_LABEL[s] ?? s }));
 
   const STATUS_BUTTONS: { value: string; label: string }[] = [
     { value: "", label: "Alle" },

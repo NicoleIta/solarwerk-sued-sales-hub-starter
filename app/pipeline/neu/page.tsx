@@ -12,6 +12,7 @@ function NeuerPipelineEintragForm() {
 
   const kundeId = searchParams.get("kundeId") ?? "";
   const [formData, setFormData] = useState({
+    kundeId,
     firma: searchParams.get("firma") ?? "",
     ansprechpartner: searchParams.get("ansprechpartner") ?? "",
     branche: searchParams.get("branche") ?? "",
