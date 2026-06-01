@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
-import { verifyNutzer } from "@/lib/users";
+import { supabase } from "@/lib/supabase";
 import FormField from "@/components/form-field";
 
 export default function LoginPage() {
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [showPasswort, setShowPasswort] = useState(false);
   const [fehler, setFehler] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   function handleBlurKennung() {
     if (!kennung.trim()) setErrors((prev) => ({ ...prev, kennung: "Pflichtfeld" }));
@@ -22,7 +23,7 @@ export default function LoginPage() {
     if (!passwort.trim()) setErrors((prev) => ({ ...prev, passwort: "Pflichtfeld" }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
     if (!kennung.trim()) newErrors.kennung = "Pflichtfeld";
@@ -31,13 +32,16 @@ export default function LoginPage() {
       setErrors(newErrors);
       return;
     }
-    const nutzer = verifyNutzer(kennung.trim(), passwort);
-    if (!nutzer) {
-      setFehler("Benutzername oder Passwort falsch.");
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: kennung.trim(),
+      password: passwort,
+    });
+    setIsLoading(false);
+    if (error) {
+      setFehler("E-Mail oder Passwort falsch.");
       return;
     }
-    localStorage.setItem("currentUser", JSON.stringify({ id: nutzer.id, name: nutzer.name, email: nutzer.email }));
-    document.cookie = "session=1; path=/; SameSite=Strict";
     router.push("/");
   }
 
@@ -62,14 +66,14 @@ export default function LoginPage() {
         </p>
 
         <div className="mb-4">
-          <FormField label="Benutzername oder E-Mail" required error={errors.kennung}>
+          <FormField label="E-Mail" required error={errors.kennung}>
             <input
               type="text"
               value={kennung}
               onChange={(e) => { setKennung(e.target.value); setFehler(""); if (e.target.value.trim()) setErrors((prev) => { const next = { ...prev }; delete next.kennung; return next; }); }}
               onBlur={handleBlurKennung}
               autoComplete="username"
-              placeholder="z. B. Nicole Ita oder nicole@solarwerk-sued.de"
+              placeholder="z. B. nicole@solarwerk-sued.de"
               className={inputClass("kennung") + " placeholder-gray-400 dark:placeholder-gray-500"}
             />
           </FormField>
@@ -106,9 +110,10 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          disabled={isLoading}
+          className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Einloggen
+          {isLoading ? "Einloggen..." : "Einloggen"}
         </button>
       </form>
     </div>
