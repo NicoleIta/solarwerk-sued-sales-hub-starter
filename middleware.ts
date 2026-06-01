@@ -1,33 +1,43 @@
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
-  const session = request.cookies.get("session");
+export async function middleware(request: NextRequest) {
+  const response = NextResponse.next();
   const { pathname } = request.nextUrl;
 
-  // Eingeloggter User versucht /login aufzurufen → weiter zum Dashboard
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // Eingeloggter Nutzer versucht /login → weiter zum Dashboard
   if (session && pathname === "/login") {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // Nicht eingeloggter User versucht eine geschützte Seite aufzurufen → weiter zu /login
+  // Nicht eingeloggter Nutzer versucht geschützte Seite → weiter zu /login
   if (!session && pathname !== "/login") {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  return NextResponse.next();
+  return response;
 }
 
-// Welche Routen soll die Middleware überwachen?
 export const config = {
   matcher: [
-    /*
-     * Alle Routen außer:
-     * - _next/static  (statische Dateien)
-     * - _next/image   (Bilder)
-     * - favicon.ico   (Browser-Icon)
-     * - api/          (API-Routen)
-     */
     "/((?!_next/static|_next/image|favicon.ico|api/).*)",
   ],
 };

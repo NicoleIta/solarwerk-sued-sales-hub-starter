@@ -4,28 +4,22 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/app/theme-toggle";
-
-type SessionUser = { id: string; name: string; email: string };
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem("currentUser");
-    if (raw) {
-      try {
-        setCurrentUser(JSON.parse(raw));
-      } catch {
-        localStorage.removeItem("currentUser");
-      }
-    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
+    });
   }, [pathname]);
 
-  function handleAbmelden() {
-    localStorage.removeItem("currentUser");
-    document.cookie = "session=; path=/; max-age=0";
+  async function handleAbmelden() {
+    await supabase.auth.signOut();
     setCurrentUser(null);
     router.push("/login");
   }
@@ -66,7 +60,7 @@ export default function Navigation() {
           {currentUser ? (
             <>
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                Eingeloggt als {currentUser.name}
+                Eingeloggt als {currentUser.email?.split("@")[0].replace(/^./, (c) => c.toUpperCase())}
               </span>
               <button
                 onClick={handleAbmelden}
