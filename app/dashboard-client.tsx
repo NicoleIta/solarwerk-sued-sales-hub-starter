@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Users, CheckCircle, AlertTriangle, Wrench } from "lucide-react";
 import { Kunde } from "@/types";
 import FilterBar from "@/components/filter-bar";
@@ -17,6 +17,8 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function DashboardClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [zugangsFehler, setZugangsFehler] = useState(searchParams.get("error") === "kein-zugriff");
   const [kunden, setKunden] = useState<Kunde[]>([]);
   const [laden, setLaden] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -139,6 +141,13 @@ export default function DashboardClient() {
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
+
+      {zugangsFehler && (
+        <div className="mb-6 flex items-center justify-between bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-700 px-4 py-3 rounded-lg text-sm">
+          <span>Kein Zugriff auf diese Seite.</span>
+          <button onClick={() => setZugangsFehler(false)} className="text-red-500 hover:text-red-700 dark:hover:text-red-200 ml-4">✕</button>
+        </div>
+      )}
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
         <StatKarte icon={Users}         label="Gesamtkunden"  wert={kpiWert(kpis.gesamt)}      farbe="blue"   />

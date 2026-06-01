@@ -27,3 +27,37 @@ export interface PipelineEintrag {
   status: PipelineStatus;
   notiz: string;
 }
+
+export type UserRole = 'admin' | 'manager' | 'sales' | 'viewer';
+
+export interface BereichPermission {
+  read: boolean;
+  edit: boolean;
+  delete: boolean;
+}
+
+export interface UserPermissions {
+  kunden:             BereichPermission;
+  pipeline:           BereichPermission;
+  berichte:           BereichPermission;
+  benutzerverwaltung: BereichPermission;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  vorname: string | null;
+  nachname: string | null;
+  role: UserRole;
+  abteilung: string | null;
+  eintrittsdatum: string | null;
+  strasse: string | null;
+  plz: string | null;
+  ort: string | null;
+  geburtstag: string | null;
+  telefon: string | null;
+  profilbild_url: string | null;
+  austrittsdatum: string | null;
+  aktiv: boolean;
+  permissions: UserPermissions;
+}
