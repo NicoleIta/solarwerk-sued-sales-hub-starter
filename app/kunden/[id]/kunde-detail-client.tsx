@@ -177,7 +177,7 @@ export default function KundeDetailClient({
                 Telefon
               </label>
               <input
-                value={formData.telefon ?? ''}
+                value={formData.telefon ?? ""}
                 onChange={(e) => handleChange("telefon", e.target.value)}
                 className={inputClass}
               />
@@ -188,7 +188,7 @@ export default function KundeDetailClient({
               </label>
               <input
                 type="email"
-                value={formData.email ?? ''}
+                value={formData.email ?? ""}
                 onChange={(e) => handleChange("email", e.target.value)}
                 className={inputClass}
               />

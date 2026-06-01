@@ -60,12 +60,6 @@ export async function POST(request: Request) {
 
   const adminClient = createSupabaseAdminClient();
 
-  // Prüfen ob E-Mail bereits als Profil existiert
-  const { data: existingProfiles } = await adminClient
-    .from("profiles")
-    .select("id")
-    .limit(500);
-
   // Auth-User anlegen
   const { data: { user: newAuthUser }, error: authError } = await adminClient.auth.admin.createUser({
     email,
@@ -83,8 +77,12 @@ export async function POST(request: Request) {
       if (!existing) {
         return Response.json({ error: "Diese E-Mail ist bereits vergeben" }, { status: 409 });
       }
-      const profileExists = existingProfiles?.some(p => p.id === existing.id);
-      if (profileExists) {
+      const { data: existingProfile } = await adminClient
+        .from("profiles")
+        .select("id")
+        .eq("id", existing.id)
+        .maybeSingle();
+      if (existingProfile) {
         return Response.json({ error: "Diese E-Mail ist bereits vergeben" }, { status: 409 });
       }
       // Auth-User ohne Profil → Profil jetzt anlegen

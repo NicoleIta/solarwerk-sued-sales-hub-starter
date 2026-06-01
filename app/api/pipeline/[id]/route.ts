@@ -1,7 +1,4 @@
-import fs from "fs";
-import path from "path";
-import Papa from "papaparse";
-import { PipelineEintrag } from "@/types";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function PATCH(
   request: Request,
@@ -9,20 +6,21 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
+  const supabase = await createSupabaseServerClient();
 
-  const filePath = path.join(process.cwd(), "data", "solarwerk_pipeline.csv");
-  const csv = fs.readFileSync(filePath, "utf-8");
-  const result = Papa.parse<PipelineEintrag>(csv, {
-    header: true,
-    dynamicTyping: true,
-    skipEmptyLines: true,
-  });
+  const { error } = await supabase
+    .from("pipeline")
+    .update({
+      betrag: body.volumen_eur !== undefined ? Number(body.volumen_eur) : undefined,
+      datum: body.angebotsdatum,
+      notizen: body.notiz,
+      status: body.status,
+    })
+    .eq("id", id);
 
-  const eintraege = result.data.map((e) =>
-    e.id === Number(id) ? { ...e, ...body } : e
-  );
-
-  fs.writeFileSync(filePath, Papa.unparse(eintraege), "utf-8");
+  if (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 
   return Response.json({ ok: true });
 }

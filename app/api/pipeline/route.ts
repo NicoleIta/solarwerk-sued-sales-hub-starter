@@ -1,36 +1,35 @@
-import fs from "fs";
-import path from "path";
-import Papa from "papaparse";
-import { PipelineEintrag } from "@/types";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function POST(request: Request) {
   const body = await request.json();
+  const supabase = await createSupabaseServerClient();
 
-  const filePath = path.join(process.cwd(), "data", "solarwerk_pipeline.csv");
-  const csv = fs.readFileSync(filePath, "utf-8");
-  const result = Papa.parse<PipelineEintrag>(csv, {
-    header: true,
-    dynamicTyping: true,
-    skipEmptyLines: true,
-  });
+  let kundeUuid: string | null = null;
+  if (body.kundeId) {
+    const { data: kundeData } = await supabase
+      .from("kunden")
+      .select("id")
+      .eq("int_id", Number(body.kundeId))
+      .single();
+    kundeUuid = kundeData?.id ?? null;
+  }
 
-  const eintraege = result.data;
-  const hoechsteId = eintraege.reduce((max, e) => Math.max(max, e.id), 0);
+  const { data: neuerEintrag, error } = await supabase
+    .from("pipeline")
+    .insert({
+      titel: body.firma,
+      status: body.status,
+      betrag: Number(body.volumen_eur) || null,
+      datum: body.angebotsdatum || null,
+      notizen: body.notiz || null,
+      ...(kundeUuid ? { kunde_id: kundeUuid } : {}),
+    })
+    .select("id")
+    .single();
 
-  const neuerEintrag: PipelineEintrag = {
-    id: hoechsteId + 1,
-    firma: body.firma,
-    ansprechpartner: body.ansprechpartner,
-    branche: body.branche,
-    anlagengroesse_kwp: Number(body.anlagengroesse_kwp),
-    volumen_eur: Number(body.volumen_eur),
-    angebotsdatum: body.angebotsdatum,
-    status: body.status,
-    notiz: body.notiz,
-  };
-
-  eintraege.push(neuerEintrag);
-  fs.writeFileSync(filePath, Papa.unparse(eintraege), "utf-8");
+  if (error || !neuerEintrag) {
+    return Response.json({ error: error?.message ?? "Fehler beim Anlegen" }, { status: 500 });
+  }
 
   return Response.json({ ok: true, id: neuerEintrag.id });
 }

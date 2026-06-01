@@ -37,7 +37,7 @@ export default function PipelineDetailClient({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await fetch(`/api/pipeline/${eintrag.id}`, {
+    await fetch(`/api/pipeline/${eintrag.supabase_uuid ?? eintrag.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),

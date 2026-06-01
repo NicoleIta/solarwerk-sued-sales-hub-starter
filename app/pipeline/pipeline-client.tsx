@@ -70,12 +70,6 @@ export default function PipelineClient() {
   useEffect(() => {
     async function fetchKpis() {
       setKpisLaden(true);
-      function baseQuery() {
-        let q = supabase.from("pipeline").select("*", { count: "exact", head: true });
-        if (statusFilter !== "alle") q = q.eq("status", statusFilter);
-        if (debouncedSuche) q = q.ilike("titel", `%${debouncedSuche}%`);
-        return q;
-      }
       const dynCountQuery = statusFilter === "alle"
         ? supabase.from("pipeline").select("*", { count: "exact", head: true })
         : supabase.from("pipeline").select("*", { count: "exact", head: true }).eq("status", statusFilter);

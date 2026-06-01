@@ -1,7 +1,4 @@
-import fs from "fs";
-import path from "path";
-import Papa from "papaparse";
-import { Kunde } from "@/types";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function PATCH(
   request: Request,
@@ -9,20 +6,16 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
+  const supabase = await createSupabaseServerClient();
 
-  const filePath = path.join(process.cwd(), "data", "solarwerk_kunden.csv");
-  const csv = fs.readFileSync(filePath, "utf-8");
-  const result = Papa.parse<Kunde>(csv, {
-    header: true,
-    dynamicTyping: true,
-    skipEmptyLines: true,
-  });
+  const { error } = await supabase
+    .from("kunden")
+    .update({ status: body.status })
+    .eq("int_id", Number(id));
 
-  const kunden = result.data.map((k) =>
-    k.id === Number(id) ? { ...k, ...body } : k
-  );
-
-  fs.writeFileSync(filePath, Papa.unparse(kunden), "utf-8");
+  if (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 
   return Response.json({ ok: true });
 }
@@ -32,18 +25,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const supabase = await createSupabaseServerClient();
 
-  const filePath = path.join(process.cwd(), "data", "solarwerk_kunden.csv");
-  const csv = fs.readFileSync(filePath, "utf-8");
-  const result = Papa.parse<Kunde>(csv, {
-    header: true,
-    dynamicTyping: true,
-    skipEmptyLines: true,
-  });
+  const { error } = await supabase
+    .from("kunden")
+    .delete()
+    .eq("int_id", Number(id));
 
-  const kunden = result.data.filter((k) => k.id !== Number(id));
-
-  fs.writeFileSync(filePath, Papa.unparse(kunden), "utf-8");
+  if (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 
   return Response.json({ ok: true });
 }
