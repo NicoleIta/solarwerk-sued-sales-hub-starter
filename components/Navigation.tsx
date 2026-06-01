@@ -4,29 +4,35 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/app/theme-toggle";
-
-type SessionUser = { id: string; name: string; email: string };
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem("currentUser");
-    if (raw) {
-      try {
-        setCurrentUser(JSON.parse(raw));
-      } catch {
-        localStorage.removeItem("currentUser");
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
+      if (session?.user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+        setIsAdmin(data?.role === "admin");
+      } else {
+        setIsAdmin(false);
       }
-    }
+    });
   }, [pathname]);
 
-  function handleAbmelden() {
-    localStorage.removeItem("currentUser");
-    document.cookie = "session=; path=/; max-age=0";
+  async function handleAbmelden() {
+    await supabase.auth.signOut();
     setCurrentUser(null);
+    setIsAdmin(false);
     router.push("/login");
   }
 
@@ -35,6 +41,7 @@ export default function Navigation() {
     { href: "/pipeline", label: "Pipeline" },
     { href: "/berichte", label: "Berichte" },
     { href: "/kunden/neu", label: "Neuer Kunde" },
+    ...(isAdmin ? [{ href: "/admin/users", label: "Benutzerverwaltung" }] : []),
   ];
 
   return (
@@ -66,7 +73,7 @@ export default function Navigation() {
           {currentUser ? (
             <>
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                Eingeloggt als {currentUser.name}
+                Eingeloggt als {currentUser.email?.split("@")[0].replace(/^./, (c) => c.toUpperCase())}
               </span>
               <button
                 onClick={handleAbmelden}
