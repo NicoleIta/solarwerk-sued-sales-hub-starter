@@ -61,4 +61,6 @@ export interface UserProfile {
   austrittsdatum: string | null;
   aktiv: boolean;
   permissions: UserPermissions;
+  temp_password: string | null;
+  muss_passwort_aendern: boolean;
 }
