@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import KundeDetailClient from "./kunde-detail-client";
 import { notFound } from "next/navigation";
 import { Kunde, PipelineEintrag } from "@/types";
@@ -9,6 +9,7 @@ export default async function KundenDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from("kunden")
