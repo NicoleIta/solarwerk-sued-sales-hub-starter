@@ -27,6 +27,7 @@ const LEER_FORMULAR = {
   vorname: "", nachname: "", email: "", role: "sales" as UserRole,
   abteilung: "", eintrittsdatum: "",
   strasse: "", plz: "", ort: "", geburtstag: "", telefon: "", austrittsdatum: "",
+  temp_password: "",
 };
 
 type SortKey = "nachname" | "role" | "aktiv";
@@ -119,6 +120,7 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
       geburtstag: p.geburtstag ?? "",
       telefon: p.telefon ?? "",
       austrittsdatum: p.austrittsdatum ?? "",
+      temp_password: p.temp_password ?? "",
     });
     setPermissions(p.permissions);
     setFehler({});
@@ -126,7 +128,7 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
   }
 
   // Validierung
-  function validiere() {
+  function validiere(isNeuerUser = false) {
     const e: Record<string, string> = {};
     if (!formular.vorname.trim())       e.vorname = "Vorname ist erforderlich";
     if (!formular.nachname.trim())      e.nachname = "Nachname ist erforderlich";
@@ -138,12 +140,14 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
     if (formular.austrittsdatum && formular.eintrittsdatum &&
         formular.austrittsdatum < formular.eintrittsdatum)
                                         e.austrittsdatum = "Austrittsdatum muss nach dem Eintrittsdatum liegen";
+    if (isNeuerUser && !formular.temp_password.trim())
+                                        e.temp_password = "Temp-Passwort ist erforderlich";
     return e;
   }
 
   // Neuen User speichern
   async function speichereNeuerUser() {
-    const e = validiere();
+    const e = validiere(true);
     if (Object.keys(e).length) { setFehler(e); return; }
     setLaden(true);
     const res = await fetch("/api/admin/users", {
@@ -178,6 +182,8 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
       austrittsdatum: formular.austrittsdatum || null,
       aktiv: true,
       permissions,
+      temp_password: formular.temp_password || null,
+      muss_passwort_aendern: true,
     };
     setProfiles(prev => [...prev, neuesProfil]);
     setNeuerUserOffen(false);
@@ -271,6 +277,7 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
                 </th>
                 <th className="px-4 py-3 text-left">Abteilung</th>
                 <th className="px-4 py-3 text-left">Eintrittsdatum</th>
+                <th className="px-4 py-3 text-left">Temp-PW</th>
                 <th
                   className="px-4 py-3 text-left cursor-pointer hover:text-blue-600 select-none"
                   onClick={() => toggleSort("aktiv")}
@@ -298,6 +305,9 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{p.abteilung}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                     {p.eintrittsdatum ? new Date(p.eintrittsdatum).toLocaleDateString("de-DE") : "—"}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">
+                    {p.muss_passwort_aendern ? (p.temp_password ?? "—") : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <select
@@ -398,6 +408,18 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
               <Feld label="Eintrittsdatum" fehler={fehler.eintrittsdatum}>
                 <input type="date" value={formular.eintrittsdatum} onChange={e => setFormular(f => ({ ...f, eintrittsdatum: e.target.value }))} className={eingabeKlasse(fehler.eintrittsdatum)} />
               </Feld>
+
+              {!bearbeitenUser && (
+                <Feld label="Temp-Passwort *" fehler={fehler.temp_password}>
+                  <input
+                    type="text"
+                    value={formular.temp_password}
+                    onChange={e => setFormular(f => ({ ...f, temp_password: e.target.value }))}
+                    placeholder="z. B. Sommer2025!"
+                    className={eingabeKlasse(fehler.temp_password)}
+                  />
+                </Feld>
+              )}
             </fieldset>
 
             {/* Optionale Felder */}
@@ -426,6 +448,18 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
               <Feld label="Austrittsdatum" fehler={fehler.austrittsdatum}>
                 <input type="date" value={formular.austrittsdatum} onChange={e => setFormular(f => ({ ...f, austrittsdatum: e.target.value }))} className={eingabeKlasse(fehler.austrittsdatum)} />
               </Feld>
+
+              {bearbeitenUser && (
+                <Feld label="Temp-Passwort (aktuell / neu setzen)">
+                  <input
+                    type="text"
+                    value={formular.temp_password}
+                    onChange={e => setFormular(f => ({ ...f, temp_password: e.target.value }))}
+                    placeholder={bearbeitenUser?.temp_password ? "" : "Nicht gesetzt — hier neu vergeben"}
+                    className={eingabeKlasse()}
+                  />
+                </Feld>
+              )}
             </fieldset>
 
             {/* Berechtigungen */}
