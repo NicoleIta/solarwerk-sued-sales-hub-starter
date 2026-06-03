@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import { Aktivitaet, Kunde, KundenStatus, PipelineEintrag } from "@/types";
 import StatusBadge from "@/app/status-badge";
 import InfoField from "@/components/info-field";
 import PipelineStatusBadge from "@/components/pipeline-status-badge";
 import AktivitaetenClient from "./aktivitaeten-client";
 import { supabase } from "@/lib/supabase";
+import { generateEmail } from "@/app/actions/generate-email";
 
 export default function KundeDetailClient({
   kunde,
@@ -27,6 +28,9 @@ export default function KundeDetailClient({
   const [formData, setFormData] = useState<Kunde>(kunde);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailModal, setEmailModal] = useState<{ text: string; error?: boolean } | null>(null);
+  const [kopiert, setKopiert] = useState(false);
 
   function handleChange(field: keyof Kunde, value: string | number) {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -82,6 +86,30 @@ export default function KundeDetailClient({
       return;
     }
     router.push("/");
+  }
+
+  async function handleEmailGenerieren() {
+    setEmailLoading(true);
+    try {
+      const text = await generateEmail({
+        firma: formData.firma,
+        ansprechpartner: formData.ansprechpartner,
+        branche: formData.branche,
+        notiz: formData.notiz ?? undefined,
+      });
+      setEmailModal({ text });
+    } catch (e) {
+      setEmailModal({ text: (e as Error).message, error: true });
+    } finally {
+      setEmailLoading(false);
+    }
+  }
+
+  async function handleKopieren() {
+    if (!emailModal) return;
+    await navigator.clipboard.writeText(emailModal.text);
+    setKopiert(true);
+    setTimeout(() => setKopiert(false), 2000);
   }
 
   const inputClass =
@@ -271,6 +299,22 @@ export default function KundeDetailClient({
         </div>
       </div>
 
+      <div className="mt-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-6 py-4">
+        <h2 className="mb-3 font-semibold text-gray-800 dark:text-gray-200">Aktionen</h2>
+        <button
+          onClick={handleEmailGenerieren}
+          disabled={emailLoading}
+          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {emailLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Mail className="h-4 w-4" />
+          )}
+          E-Mail generieren
+        </button>
+      </div>
+
       <div className="mt-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
           <h2 className="font-semibold text-gray-800 dark:text-gray-200">
@@ -336,6 +380,38 @@ export default function KundeDetailClient({
         initialAktivitaeten={aktivitaeten}
         currentUserId={currentUserId}
       />
+
+      {emailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-lg bg-white dark:bg-gray-900 p-6 shadow-xl">
+            <h3 className="mb-4 font-semibold text-gray-900 dark:text-gray-100">
+              {emailModal.error ? "Fehler" : "E-Mail-Entwurf"}
+            </h3>
+            <pre className="mb-4 max-h-80 overflow-y-auto whitespace-pre-wrap rounded-md bg-gray-50 dark:bg-gray-800 p-4 text-sm text-gray-700 dark:text-gray-300">
+              {emailModal.text}
+            </pre>
+            <div className="flex justify-end gap-3">
+              {!emailModal.error && (
+                <button
+                  onClick={handleKopieren}
+                  className="rounded-md border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  {kopiert ? "Kopiert!" : "Kopieren"}
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setEmailModal(null);
+                  setKopiert(false);
+                }}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
