@@ -1,7 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import KundeDetailClient from "./kunde-detail-client";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Aktivitaet, Kunde, PipelineEintrag } from "@/types";
+import { ladeBenutzerPermissions } from "@/lib/permissions";
 
 export default async function KundenDetailPage({
   params,
@@ -10,6 +11,11 @@ export default async function KundenDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
+
+  const { permissions, isAdmin } = await ladeBenutzerPermissions(supabase);
+  if (!isAdmin && !permissions.kunden.read) {
+    redirect("/?error=kein-zugriff");
+  }
 
   const { data, error } = await supabase
     .from("kunden")
@@ -44,12 +50,15 @@ export default async function KundenDetailPage({
       supabase.auth.getSession(),
     ]);
 
+  const canDelete = isAdmin || permissions.kunden.delete;
+
   return (
     <KundeDetailClient
       kunde={kunde}
       pipelineEintraege={(pipelineData ?? []) as PipelineEintrag[]}
       aktivitaeten={(aktivitaetenData ?? []) as Aktivitaet[]}
       currentUserId={session?.user.id ?? ""}
+      canDelete={canDelete}
     />
   );
 }

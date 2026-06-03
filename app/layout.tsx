@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { ladeBenutzerPermissions } from "@/lib/permissions";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,11 +15,14 @@ export const metadata: Metadata = {
   description: "Vertriebs-Dashboard fuer Solarwerk Sued GmbH",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createSupabaseServerClient();
+  const { permissions, role } = await ladeBenutzerPermissions(supabase);
+
   return (
     <html lang="de" className={`${geistSans.variable} h-full`} suppressHydrationWarning>
       <head>
@@ -28,7 +33,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-gray-50 dark:bg-gray-950 font-[family-name:var(--font-geist-sans)] text-gray-900 dark:text-gray-100 antialiased">
-        <Navigation />
+        <Navigation permissions={permissions} role={role} />
         <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
           {children}
         </main>

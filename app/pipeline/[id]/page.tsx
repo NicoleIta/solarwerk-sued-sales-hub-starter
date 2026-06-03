@@ -1,7 +1,8 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import PipelineDetailClient from "./pipeline-detail-client";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PipelineEintrag, PipelineStatus } from "@/types";
+import { ladeBenutzerPermissions } from "@/lib/permissions";
 
 export default async function PipelineDetailPage({
   params,
@@ -9,6 +10,12 @@ export default async function PipelineDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const supabase = await createSupabaseServerClient();
+
+  const { permissions, isAdmin } = await ladeBenutzerPermissions(supabase);
+  if (!isAdmin && !permissions.pipeline.read) {
+    redirect("/?error=kein-zugriff");
+  }
 
   const { data, error } = await supabase
     .from("pipeline")
@@ -31,5 +38,7 @@ export default async function PipelineDetailPage({
     notiz: data.notizen ?? "",
   };
 
-  return <PipelineDetailClient eintrag={eintrag} />;
+  const canDelete = isAdmin || permissions.pipeline.delete;
+
+  return <PipelineDetailClient eintrag={eintrag} canDelete={canDelete} />;
 }
