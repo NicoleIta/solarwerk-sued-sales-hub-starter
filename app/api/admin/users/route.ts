@@ -52,18 +52,21 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const { vorname, nachname, email, role, abteilung, eintrittsdatum,
-          strasse, plz, ort, geburtstag, telefon, austrittsdatum } = body;
+          strasse, plz, ort, geburtstag, telefon, austrittsdatum, temp_password } = body;
 
   if (!vorname || !nachname || !email || !role || !abteilung || !eintrittsdatum) {
     return Response.json({ error: "Pflichtfelder fehlen" }, { status: 400 });
   }
+  if (!temp_password) {
+    return Response.json({ error: "Temp-Passwort ist erforderlich" }, { status: 400 });
+  }
 
   const adminClient = createSupabaseAdminClient();
 
-  // Auth-User anlegen
+  // Auth-User anlegen mit Temp-Passwort
   const { data: { user: newAuthUser }, error: authError } = await adminClient.auth.admin.createUser({
     email,
-    password: crypto.randomUUID(),
+    password: temp_password,
     email_confirm: true,
   });
 
@@ -114,6 +117,8 @@ export async function POST(request: Request) {
       austrittsdatum: austrittsdatum || null,
       aktiv: true,
       permissions: DEFAULT_PERMISSIONS,
+      temp_password,
+      muss_passwort_aendern: true,
     });
 
   if (profileError) {

@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase-server";
 
 async function requireAdmin() {
   const supabase = await createSupabaseServerClient();
@@ -33,7 +33,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const erlaubteFelder = [
     "vorname", "nachname", "role", "abteilung", "eintrittsdatum",
     "strasse", "plz", "ort", "geburtstag", "telefon",
-    "austrittsdatum", "aktiv", "permissions",
+    "austrittsdatum", "aktiv", "permissions", "temp_password",
   ];
 
   const datumsFelder = ["eintrittsdatum", "geburtstag", "austrittsdatum"];
@@ -43,6 +43,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (feld in body) {
       update[feld] = datumsFelder.includes(feld) && body[feld] === "" ? null : body[feld];
     }
+  }
+
+  // Leerer temp_password-Wert → nicht speichern (Feld unverändert lassen)
+  if ('temp_password' in update && !update.temp_password) {
+    delete update.temp_password;
+  }
+
+  // Wenn ein neues Temp-Passwort gesetzt wird: Auth-Passwort + muss_passwort_aendern aktualisieren
+  if (update.temp_password) {
+    const adminClient = createSupabaseAdminClient();
+    const { error: authUpdateError } = await adminClient.auth.admin.updateUserById(id, {
+      password: update.temp_password as string,
+    });
+    if (authUpdateError) {
+      return Response.json({ error: authUpdateError.message }, { status: 500 });
+    }
+    update.muss_passwort_aendern = true;
   }
 
   const { error: updateError } = await supabase

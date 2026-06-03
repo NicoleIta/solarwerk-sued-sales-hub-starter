@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import KundeDetailClient from "./kunde-detail-client";
 import { notFound } from "next/navigation";
-import { Kunde, PipelineEintrag } from "@/types";
+import { Aktivitaet, Kunde, PipelineEintrag } from "@/types";
 
 export default async function KundenDetailPage({
   params,
@@ -33,15 +33,23 @@ export default async function KundenDetailPage({
     notiz: data.notiz,
   };
 
-  const { data: pipelineData } = await supabase
-    .from("pipeline")
-    .select("*")
-    .eq("firma", data.firma);
+  const [{ data: pipelineData }, { data: aktivitaetenData }, { data: { session } }] =
+    await Promise.all([
+      supabase.from("pipeline").select("*").eq("firma", data.firma),
+      supabase
+        .from("aktivitaeten")
+        .select("*")
+        .eq("kunde_id", data.id)
+        .order("erstellt_am", { ascending: false }),
+      supabase.auth.getSession(),
+    ]);
 
   return (
     <KundeDetailClient
       kunde={kunde}
       pipelineEintraege={(pipelineData ?? []) as PipelineEintrag[]}
+      aktivitaeten={(aktivitaetenData ?? []) as Aktivitaet[]}
+      currentUserId={session?.user.id ?? ""}
     />
   );
 }
