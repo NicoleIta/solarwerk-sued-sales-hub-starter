@@ -3,6 +3,7 @@
 ## Workflow
 
 - **Wie arbeiten wir zusammen:** Erst Spec schreiben, dann Claude Code mit dem Spec prompten. Keine Implementierung ohne vorherige Spezifikation.
+- **Rückfragen:** Alle Rückfragen mit dem AskUserQuestion-Tool als klickbare Optionen stellen. Nie als Fließtext.
 
 ## Tech-Stack
 

@@ -1,0 +1,13 @@
+id,kunde_id,typ,datum,notiz
+1,1,Anruf,2026-02-10,Erstgespraech zur Erweiterung. Interesse an 25 kWp zusaetzlich.
+2,1,Termin,2026-02-28,Vor-Ort-Termin. Dachflaeche vermessen. Statik unkritisch.
+3,1,E-Mail,2026-03-12,Angebotsentwurf fuer Erweiterung zugesandt. Rueckmeldung offen.
+4,2,E-Mail,2026-04-22,Zufriedenheit bestaetigt. Thema Speicher-Aufstockung aufgekommen.
+5,2,Anruf,2026-05-21,Speicher-Aufstockung besprochen. Angebot folgt diese Woche.
+6,10,E-Mail,2026-05-19,Eckdaten fuer Halle-2-Erweiterung angefragt.
+7,5,Termin,2026-01-15,Vor-Ort-Gespraech Wellnessbereich. Seitdem kein Kontakt.
+8,3,Anruf,2026-02-08,Routine-Check. Anlage laeuft einwandfrei.
+9,13,E-Mail,2026-04-10,Statik-Pruefung angestossen. Angebot in Vorbereitung.
+10,20,Anruf,2026-03-30,Notstromfaehigkeit als Anforderung aufgenommen.
+11,20,Termin,2026-04-18,Speicher-Dimensionierung besprochen. Angebot in Arbeit.
+12,28,Termin,2026-05-31,Konditionen final besprochen. Unterschrift zugesagt.
