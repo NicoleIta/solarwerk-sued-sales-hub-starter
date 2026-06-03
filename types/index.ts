@@ -29,6 +29,18 @@ export interface PipelineEintrag {
   notiz: string;
 }
 
+export type AktivitaetTyp = 'Anruf' | 'E-Mail' | 'Notiz' | 'Besuch/Termin';
+
+export interface Aktivitaet {
+  id: string;
+  kunde_id: string;
+  typ: AktivitaetTyp;
+  betreff: string;
+  inhalt: string | null;
+  erstellt_von: string;
+  erstellt_am: string;
+}
+
 export type UserRole = 'admin' | 'manager' | 'sales' | 'viewer';
 
 export interface BereichPermission {
