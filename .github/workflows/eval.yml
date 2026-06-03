@@ -1,6 +1,7 @@
 name: Promptfoo Evals
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - "prompts/**"
@@ -25,6 +26,12 @@ jobs:
 
       - name: Promptfoo installieren
         run: npm install -g promptfoo
+
+      - name: API Key prüfen
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then echo "SECRET FEHLT"; else echo "Secret gesetzt (${#OPENROUTER_API_KEY} Zeichen)"; fi
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
       - name: Evals ausführen
         run: promptfoo eval --no-cache
