@@ -1,0 +1,35 @@
+description: "Solarwerk Süd — E-Mail-Draft Eval"
+
+prompts:
+  - prompts/email-draft.md
+
+providers:
+  - id: openrouter:anthropic/claude-haiku-4-5
+
+tests:
+  - description: "Bäckerei Huber"
+    vars:
+      firma: "Bäckerei Huber GmbH"
+      ansprechpartner: "Thomas Huber"
+      branche: "Lebensmittelhandwerk"
+      notiz: "Interesse an Stromspeicher für Backofen-Lastspitzen"
+    assert:
+      - type: contains
+        value: "Solarwerk Süd"
+      - type: icontains
+        value: "solar"
+      - type: javascript
+        value: "output.length > 200"
+
+  - description: "Autowerkstatt ohne Notiz"
+    vars:
+      firma: "KFZ-Technik Mayer"
+      ansprechpartner: "Sandra Mayer"
+      branche: "Kfz-Gewerbe"
+    assert:
+      - type: contains
+        value: "Solarwerk Süd"
+      - type: icontains
+        value: "solar"
+      - type: javascript
+        value: "output.length > 200"
