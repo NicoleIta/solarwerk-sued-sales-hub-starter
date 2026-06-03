@@ -4,18 +4,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { Kunde, KundenStatus, PipelineEintrag } from "@/types";
+import { Aktivitaet, Kunde, KundenStatus, PipelineEintrag } from "@/types";
 import StatusBadge from "@/app/status-badge";
 import InfoField from "@/components/info-field";
 import PipelineStatusBadge from "@/components/pipeline-status-badge";
+import AktivitaetenClient from "./aktivitaeten-client";
 import { supabase } from "@/lib/supabase";
 
 export default function KundeDetailClient({
   kunde,
   pipelineEintraege,
+  aktivitaeten,
+  currentUserId,
 }: {
   kunde: Kunde;
   pipelineEintraege: PipelineEintrag[];
+  aktivitaeten: Aktivitaet[];
+  currentUserId: string;
 }) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -325,6 +330,12 @@ export default function KundeDetailClient({
           </table>
         )}
       </div>
+
+      <AktivitaetenClient
+        kundeUuid={kunde.supabase_uuid!}
+        initialAktivitaeten={aktivitaeten}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }

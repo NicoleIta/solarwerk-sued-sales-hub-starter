@@ -51,6 +51,8 @@ export default async function AdminUsersPage() {
       berichte:           { read: true,  edit: false, delete: false },
       benutzerverwaltung: { read: false, edit: false, delete: false },
     },
+    temp_password: p.temp_password ?? null,
+    muss_passwort_aendern: p.muss_passwort_aendern ?? false,
   }));
 
   return (

@@ -33,6 +33,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // Eingeloggter Nutzer: prüfe ob Passwortänderung erforderlich
+  if (session && pathname !== "/passwort-aendern") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("muss_passwort_aendern")
+      .eq("id", session.user.id)
+      .single();
+
+    if (profile?.muss_passwort_aendern) {
+      return NextResponse.redirect(new URL("/passwort-aendern", request.url));
+    }
+  }
+
   return response;
 }
 
