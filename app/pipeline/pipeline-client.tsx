@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { TrendingUp, FileText, XCircle } from "lucide-react";
 import { PipelineStatus, UserRole } from "@/types";
 import { PIPELINE_STYLE } from "@/components/pipeline-status-badge";
@@ -28,6 +29,7 @@ type SupabasePipelineEintrag = {
   kunden: {
     ansprechpartner: string;
     branche: string;
+    zustaendig_id: string | null;
   } | null;
 };
 
@@ -41,6 +43,7 @@ const STATUS_BUTTONS: { value: PipelineStatus | "alle"; label: string }[] = [
 ];
 
 export default function PipelineClient({ activeUsers, currentUserId, currentUserRole }: Props) {
+  const router = useRouter();
   const istBerechtigt = isAdminOrTeamleiter(currentUserRole);
 
   const [eintraege, setEintraege] = useState<SupabasePipelineEintrag[]>([]);
@@ -64,7 +67,7 @@ export default function PipelineClient({ activeUsers, currentUserId, currentUser
       setFehler(null);
       let query = supabase
         .from("pipeline")
-        .select("*, kunden(ansprechpartner, branche)")
+        .select("*, kunden(ansprechpartner, branche, zustaendig_id)")
         .order("datum", { ascending: false });
       if (statusFilter !== "alle") query = query.eq("status", statusFilter);
       if (debouncedSuche) query = query.ilike("titel", `%${debouncedSuche}%`);
@@ -228,7 +231,8 @@ export default function PipelineClient({ activeUsers, currentUserId, currentUser
             {gefilterteEintraege.map((eintrag) => (
               <tr
                 key={eintrag.id}
-                className="border-b border-gray-100 dark:border-gray-700"
+                onClick={() => router.push(`/pipeline/${eintrag.id}`)}
+                className="cursor-pointer border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <td className="px-4 py-3 font-medium">{eintrag.titel}</td>
                 <td className="px-4 py-3">{eintrag.kunden?.ansprechpartner ?? "—"}</td>
@@ -240,23 +244,8 @@ export default function PipelineClient({ activeUsers, currentUserId, currentUser
                     {eintrag.status.replace("_", " ")}
                   </span>
                 </td>
-                <td className="px-4 py-3">
-                  {istBerechtigt ? (
-                    <select
-                      value={eintrag.zustaendig_id ?? ""}
-                      onChange={(e) => zustaendigZuweisen(eintrag.id, e.target.value || null)}
-                      className="rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 px-2 py-1 text-xs"
-                    >
-                      <option value="">— nicht zugewiesen —</option>
-                      {activeUsers.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.vorname} {u.nachname}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className="text-gray-500">{userLabel(eintrag.zustaendig_id) ?? "—"}</span>
-                  )}
+                <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                  {userLabel(eintrag.kunden?.zustaendig_id ?? null) ?? "—"}
                 </td>
               </tr>
             ))}
