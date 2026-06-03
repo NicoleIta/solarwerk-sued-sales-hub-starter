@@ -2,25 +2,27 @@
 
 import { useState, useMemo } from "react";
 import { UserProfile, UserRole, UserPermissions, BereichPermission } from "@/types";
-import { ChevronUp, ChevronDown, Plus, Pencil, X, Check } from "lucide-react";
+import { ChevronUp, ChevronDown, Plus, Pencil, Trash2, X, Check } from "lucide-react";
+import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
+import LoeschDialog from "@/app/loeschdialog";
 
 const ROLLEN: UserRole[] = ["admin", "manager", "sales", "viewer"];
 const ABTEILUNGEN = ["Buchhaltung", "Geschäftsleitung", "Informatik", "Innendienst", "Marketing", "Technik", "Vertrieb"];
 const BEREICHE = ["kunden", "pipeline", "berichte", "benutzerverwaltung"] as const;
 type Bereich = typeof BEREICHE[number];
 
+const BEREICH_LABEL: Record<Bereich, string> = {
+  kunden: "Kunden",
+  pipeline: "Pipeline",
+  berichte: "Berichte",
+  benutzerverwaltung: "Benutzer",
+};
+
 const ROLLEN_LABEL: Record<UserRole, string> = {
   admin:   "Admin",
   manager: "Manager",
   sales:   "Vertrieb",
   viewer:  "Nur lesen",
-};
-
-const DEFAULT_PERMISSIONS: UserPermissions = {
-  kunden:             { read: true,  edit: false, delete: false },
-  pipeline:           { read: true,  edit: false, delete: false },
-  berichte:           { read: true,  edit: false, delete: false },
-  benutzerverwaltung: { read: false, edit: false, delete: false },
 };
 
 const LEER_FORMULAR = {
@@ -51,6 +53,8 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
   const [erfolg, setErfolg] = useState("");
   const [laden, setLaden] = useState(false);
   const [globalFehler, setGlobalFehler] = useState("");
+  const [loeschUser, setLoeschUser] = useState<UserProfile | null>(null);
+  const [loeschLaden, setLoeschLaden] = useState(false);
 
   // Sortierung
   const sortierte = useMemo(() => {
@@ -95,6 +99,26 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
     if (res.ok) {
       setProfiles(prev => prev.map(p => p.id === id ? { ...p, aktiv } : p));
     }
+  }
+
+  async function loescheUser() {
+    if (!loeschUser) return;
+    setLoeschLaden(true);
+    const res = await fetch(`/api/admin/users/${loeschUser.id}`, {
+      method: "DELETE",
+    });
+    setLoeschLaden(false);
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setGlobalFehler(json.error ?? "Fehler beim Löschen des Benutzers.");
+      setTimeout(() => setGlobalFehler(""), 4000);
+      setLoeschUser(null);
+      return;
+    }
+    setProfiles((prev) => prev.filter((p) => p.id !== loeschUser.id));
+    setErfolg(`${loeschUser.vorname} ${loeschUser.nachname} wurde gelöscht.`);
+    setTimeout(() => setErfolg(""), 4000);
+    setLoeschUser(null);
   }
 
   // Neuer-User-Modal öffnen
@@ -293,8 +317,22 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
                   <td className="px-4 py-3 font-mono text-xs text-gray-400 dark:text-gray-500 max-w-[80px] truncate">
                     {p.id.slice(0, 8)}…
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                    {p.vorname} {p.nachname}
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {p.vorname} {p.nachname}
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {BEREICHE.map(b => {
+                        const perm = p.permissions[b];
+                        const rechte = [perm.read && "L", perm.edit && "B", perm.delete && "X"].filter(Boolean) as string[];
+                        if (!rechte.length) return null;
+                        return (
+                          <span key={b} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                            {BEREICH_LABEL[b]}: {rechte.join(" ")}
+                          </span>
+                        );
+                      })}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{p.email}</td>
                   <td className="px-4 py-3">
@@ -326,13 +364,27 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
                     </select>
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => oeffneBearbeiten(p)}
-                      className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                      title="Bearbeiten"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => oeffneBearbeiten(p)}
+                        className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                        title="Bearbeiten"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setLoeschUser(p)}
+                        disabled={p.id === currentUserId}
+                        className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        title={
+                          p.id === currentUserId
+                            ? "Du kannst dein eigenes Konto nicht löschen"
+                            : "Löschen"
+                        }
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -347,6 +399,19 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
           </table>
         </div>
       </div>
+
+      {loeschUser && (
+        <LoeschDialog
+          name={`${loeschUser.vorname ?? ""} ${loeschUser.nachname ?? ""}`.trim()}
+          typ="Benutzer"
+          aktivitaetenCount={0}
+          pipelineCount={0}
+          onBestaetigen={loescheUser}
+          onAbbrechen={() => setLoeschUser(null)}
+          isLoading={loeschLaden}
+          isSelbst={loeschUser.id === currentUserId}
+        />
+      )}
 
       {/* Modal */}
       {modalOffen && (

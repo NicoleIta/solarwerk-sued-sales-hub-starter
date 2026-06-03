@@ -9,6 +9,7 @@ import StatusBadge from "@/app/status-badge";
 import InfoField from "@/components/info-field";
 import PipelineStatusBadge from "@/components/pipeline-status-badge";
 import AktivitaetenClient from "./aktivitaeten-client";
+import LoeschDialog from "@/app/loeschdialog";
 import { supabase } from "@/lib/supabase";
 import { generateEmail } from "@/app/actions/generate-email";
 
@@ -17,11 +18,13 @@ export default function KundeDetailClient({
   pipelineEintraege,
   aktivitaeten,
   currentUserId,
+  canDelete,
 }: {
   kunde: Kunde;
   pipelineEintraege: PipelineEintrag[];
   aktivitaeten: Aktivitaet[];
   currentUserId: string;
+  canDelete: boolean;
 }) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -31,6 +34,10 @@ export default function KundeDetailClient({
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailModal, setEmailModal] = useState<{ text: string; error?: boolean } | null>(null);
   const [kopiert, setKopiert] = useState(false);
+  const [loeschDialogOffen, setLoeschDialogOffen] = useState(false);
+  const [loeschAktivitaetenCount, setLoeschAktivitaetenCount] = useState(0);
+  const [loeschPipelineCount, setLoeschPipelineCount] = useState(0);
+  const [loeschCountFehler, setLoeschCountFehler] = useState(false);
 
   function handleChange(field: keyof Kunde, value: string | number) {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -73,7 +80,29 @@ export default function KundeDetailClient({
   }
 
   async function handleDelete() {
-    if (!window.confirm("Wirklich löschen?")) return;
+    setIsLoading(true);
+    let aktCount = 0;
+    let countFehler = false;
+
+    try {
+      const { count, error } = await supabase
+        .from("aktivitaeten")
+        .select("*", { count: "exact", head: true })
+        .eq("kunde_id", kunde.supabase_uuid!);
+      if (error) countFehler = true;
+      else aktCount = count ?? 0;
+    } catch {
+      countFehler = true;
+    }
+
+    setIsLoading(false);
+    setLoeschAktivitaetenCount(aktCount);
+    setLoeschPipelineCount(pipelineEintraege.length);
+    setLoeschCountFehler(countFehler);
+    setLoeschDialogOffen(true);
+  }
+
+  async function fuehreLoeschenAus() {
     setIsLoading(true);
     setError(null);
     const { error: sbError } = await supabase
@@ -83,6 +112,7 @@ export default function KundeDetailClient({
     setIsLoading(false);
     if (sbError) {
       setError("Fehler beim Löschen: " + sbError.message);
+      setLoeschDialogOffen(false);
       return;
     }
     router.push("/");
@@ -286,14 +316,16 @@ export default function KundeDetailClient({
               >
                 Bearbeiten
               </button>
-              <button
-                onClick={handleDelete}
-                disabled={isLoading}
-                className="inline-flex items-center gap-2 rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 disabled:opacity-50"
-              >
-                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                Löschen
-              </button>
+              {canDelete && (
+                <button
+                  onClick={handleDelete}
+                  disabled={isLoading}
+                  className="inline-flex items-center gap-2 rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 disabled:opacity-50"
+                >
+                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Löschen
+                </button>
+              )}
             </>
           )}
         </div>
@@ -380,6 +412,19 @@ export default function KundeDetailClient({
         initialAktivitaeten={aktivitaeten}
         currentUserId={currentUserId}
       />
+
+      {loeschDialogOffen && (
+        <LoeschDialog
+          name={formData.firma}
+          typ="Kunde"
+          aktivitaetenCount={loeschAktivitaetenCount}
+          pipelineCount={loeschPipelineCount}
+          countFehler={loeschCountFehler}
+          onBestaetigen={fuehreLoeschenAus}
+          onAbbrechen={() => setLoeschDialogOffen(false)}
+          isLoading={isLoading}
+        />
+      )}
 
       {emailModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
