@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       telefon: body.telefon,
       email: body.email,
       notiz: body.notiz,
+      zustaendig_id: body.zustaendig_id || null,
     })
     .select("id")
     .single();

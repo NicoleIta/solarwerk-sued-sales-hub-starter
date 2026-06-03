@@ -8,9 +8,13 @@ export async function PATCH(
   const body = await request.json();
   const supabase = await createSupabaseServerClient();
 
+  const update: Record<string, unknown> = {};
+  if (body.status !== undefined) update.status = body.status;
+  if (body.zustaendig_id !== undefined) update.zustaendig_id = body.zustaendig_id;
+
   const { error } = await supabase
     .from("kunden")
-    .update({ status: body.status })
+    .update(update)
     .eq("int_id", Number(id));
 
   if (error) {

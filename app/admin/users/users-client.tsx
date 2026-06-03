@@ -6,7 +6,7 @@ import { ChevronUp, ChevronDown, Plus, Pencil, Trash2, X, Check } from "lucide-r
 import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
 import LoeschDialog from "@/app/loeschdialog";
 
-const ROLLEN: UserRole[] = ["admin", "manager", "sales", "viewer"];
+const ROLLEN: UserRole[] = ["admin", "teamleiter", "manager", "sales", "viewer"];
 const ABTEILUNGEN = ["Buchhaltung", "Geschäftsleitung", "Informatik", "Innendienst", "Marketing", "Technik", "Vertrieb"];
 const BEREICHE = ["kunden", "pipeline", "berichte", "benutzerverwaltung"] as const;
 type Bereich = typeof BEREICHE[number];
@@ -19,10 +19,11 @@ const BEREICH_LABEL: Record<Bereich, string> = {
 };
 
 const ROLLEN_LABEL: Record<UserRole, string> = {
-  admin:   "Admin",
-  manager: "Manager",
-  sales:   "Vertrieb",
-  viewer:  "Nur lesen",
+  admin:      "Admin",
+  teamleiter: "Teamleiter",
+  manager:    "Manager",
+  sales:      "Vertrieb",
+  viewer:     "Nur lesen",
 };
 
 const LEER_FORMULAR = {

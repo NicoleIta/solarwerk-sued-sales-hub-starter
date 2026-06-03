@@ -8,14 +8,19 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   benutzerverwaltung: { read: false, edit: false, delete: false },
 };
 
+export function isAdminOrTeamleiter(role: UserRole | null): boolean {
+  return role === "admin" || role === "teamleiter";
+}
+
 export async function ladeBenutzerPermissions(supabase: SupabaseClient): Promise<{
   permissions: UserPermissions;
   role: UserRole | null;
   isAdmin: boolean;
+  userId: string | null;
 }> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) {
-    return { permissions: DEFAULT_PERMISSIONS, role: null, isAdmin: false };
+    return { permissions: DEFAULT_PERMISSIONS, role: null, isAdmin: false, userId: null };
   }
 
   const { data } = await supabase
@@ -28,5 +33,5 @@ export async function ladeBenutzerPermissions(supabase: SupabaseClient): Promise
   const isAdmin = role === "admin";
   const permissions: UserPermissions = data?.permissions ?? DEFAULT_PERMISSIONS;
 
-  return { permissions, role, isAdmin };
+  return { permissions, role, isAdmin, userId: session.user.id };
 }

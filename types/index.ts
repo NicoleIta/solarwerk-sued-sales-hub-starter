@@ -41,7 +41,7 @@ export interface Aktivitaet {
   erstellt_am: string;
 }
 
-export type UserRole = 'admin' | 'manager' | 'sales' | 'viewer';
+export type UserRole = 'admin' | 'teamleiter' | 'manager' | 'sales' | 'viewer';
 
 export interface BereichPermission {
   read: boolean;
