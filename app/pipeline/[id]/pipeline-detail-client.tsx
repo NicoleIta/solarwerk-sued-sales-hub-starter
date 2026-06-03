@@ -3,15 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { PipelineEintrag } from "@/types";
+import { supabase } from "@/lib/supabase";
+import LoeschDialog from "@/app/loeschdialog";
 
 export default function PipelineDetailClient({
   eintrag,
+  canDelete,
 }: {
   eintrag: PipelineEintrag;
+  canDelete: boolean;
 }) {
   const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [loeschDialogOffen, setLoeschDialogOffen] = useState(false);
   const [formData, setFormData] = useState({
     anlagengroesse_kwp: eintrag.anlagengroesse_kwp,
     volumen_eur: eintrag.volumen_eur ?? 0,
@@ -45,8 +51,34 @@ export default function PipelineDetailClient({
     router.push("/pipeline");
   }
 
+  function handleDelete() {
+    setLoeschDialogOffen(true);
+  }
+
+  async function fuehreLoeschenAus() {
+    setIsDeleting(true);
+    const { error } = await supabase
+      .from("pipeline")
+      .delete()
+      .eq("id", eintrag.supabase_uuid!);
+    setIsDeleting(false);
+    if (!error) router.push("/pipeline");
+  }
+
   return (
     <div>
+      {loeschDialogOffen && (
+        <LoeschDialog
+          name={eintrag.firma}
+          typ="Pipeline-Eintrag"
+          aktivitaetenCount={0}
+          pipelineCount={0}
+          onBestaetigen={fuehreLoeschenAus}
+          onAbbrechen={() => setLoeschDialogOffen(false)}
+          isLoading={isDeleting}
+        />
+      )}
+
       <Link
         href="/pipeline"
         className="mb-6 inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
@@ -131,13 +163,24 @@ export default function PipelineDetailClient({
             />
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 flex gap-3">
             <button
               type="submit"
               className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               Speichern
             </button>
+            {canDelete && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-2 rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 disabled:opacity-50"
+              >
+                {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Löschen
+              </button>
+            )}
           </div>
         </form>
       </div>

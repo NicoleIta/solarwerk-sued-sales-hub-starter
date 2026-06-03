@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Phone, Mail, FileText, CalendarDays, Plus, Trash2, Loader2 } from "lucide-react";
 import { Aktivitaet, AktivitaetTyp } from "@/types";
 import { supabase } from "@/lib/supabase";
+import LoeschDialog from "@/app/loeschdialog";
 
 const TYP_ICON: Record<AktivitaetTyp, React.ReactNode> = {
   Anruf:          <Phone className="h-4 w-4" />,
@@ -47,6 +48,7 @@ export default function AktivitaetenClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [loeschAktivitaet, setLoeschAktivitaet] = useState<Aktivitaet | null>(null);
 
   function oeffneModal() {
     setTyp("Anruf");
@@ -89,16 +91,25 @@ export default function AktivitaetenClient({
     setModalOffen(false);
   }
 
-  async function handleDelete(id: string) {
-    if (!window.confirm("Aktivität wirklich löschen?")) return;
-    setDeleteLoading(id);
-    const { error } = await supabase.from("aktivitaeten").delete().eq("id", id);
+  function handleDelete(a: Aktivitaet) {
+    setLoeschAktivitaet(a);
+  }
+
+  async function fuehreLoeschenAus() {
+    if (!loeschAktivitaet) return;
+    setDeleteLoading(loeschAktivitaet.id);
+    const { error } = await supabase
+      .from("aktivitaeten")
+      .delete()
+      .eq("id", loeschAktivitaet.id);
     setDeleteLoading(null);
     if (error) {
       setFehler("Fehler beim Löschen: " + error.message);
+      setLoeschAktivitaet(null);
       return;
     }
-    setAktivitaeten((prev) => prev.filter((a) => a.id !== id));
+    setAktivitaeten((prev) => prev.filter((a) => a.id !== loeschAktivitaet.id));
+    setLoeschAktivitaet(null);
   }
 
   return (
@@ -162,7 +173,7 @@ export default function AktivitaetenClient({
               </div>
               {a.erstellt_von === currentUserId && (
                 <button
-                  onClick={() => handleDelete(a.id)}
+                  onClick={() => handleDelete(a)}
                   disabled={deleteLoading === a.id}
                   className="ml-auto shrink-0 rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 disabled:opacity-40"
                   title="Aktivität löschen"
@@ -177,6 +188,18 @@ export default function AktivitaetenClient({
             </li>
           ))}
         </ul>
+      )}
+
+      {loeschAktivitaet && (
+        <LoeschDialog
+          name={`${loeschAktivitaet.betreff} (${loeschAktivitaet.typ})`}
+          typ="Aktivität"
+          aktivitaetenCount={0}
+          pipelineCount={0}
+          onBestaetigen={fuehreLoeschenAus}
+          onAbbrechen={() => setLoeschAktivitaet(null)}
+          isLoading={deleteLoading === loeschAktivitaet.id}
+        />
       )}
 
       {/* Modal */}
