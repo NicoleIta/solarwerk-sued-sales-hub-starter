@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Loader2, X } from "lucide-react";
+import { AlertTriangle, Clock, Loader2, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 interface LoeschDialogProps {
@@ -10,6 +10,7 @@ interface LoeschDialogProps {
   aktivitaetenCount: number;
   pipelineCount: number;
   countFehler?: boolean;
+  wiedervorlagenCount?: number;
   onBestaetigen: () => void | Promise<void>;
   onAbbrechen: () => void;
   isLoading: boolean;
@@ -22,6 +23,7 @@ export default function LoeschDialog({
   aktivitaetenCount,
   pipelineCount,
   countFehler,
+  wiedervorlagenCount,
   onBestaetigen,
   onAbbrechen,
   isLoading,
@@ -113,6 +115,18 @@ export default function LoeschDialog({
             <span>
               Dieser {typ} hat verknüpfte Daten ({infoParts.join(", ")}).
               Das Löschen entfernt diese Daten unwiderruflich.
+            </span>
+          </div>
+        )}
+
+        {(wiedervorlagenCount ?? 0) > 0 && (
+          <div className="mb-4 flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm text-yellow-800 dark:border-yellow-700 dark:bg-yellow-950 dark:text-yellow-300">
+            <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Dieser {typ} hat {wiedervorlagenCount} offene{" "}
+              {wiedervorlagenCount === 1 ? "Wiedervorlage" : "Wiedervorlagen"}.{" "}
+              {wiedervorlagenCount === 1 ? "Diese wird" : "Diese werden"} beim
+              Löschen vom Kunden getrennt, aber nicht gelöscht.
             </span>
           </div>
         )}

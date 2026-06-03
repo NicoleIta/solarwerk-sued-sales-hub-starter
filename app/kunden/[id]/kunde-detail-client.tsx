@@ -9,6 +9,7 @@ import StatusBadge from "@/app/status-badge";
 import InfoField from "@/components/info-field";
 import PipelineStatusBadge from "@/components/pipeline-status-badge";
 import AktivitaetenClient from "./aktivitaeten-client";
+import WiedervorlageClient from "@/app/wiedervorlage-client";
 import LoeschDialog from "@/app/loeschdialog";
 import { supabase } from "@/lib/supabase";
 import { generateEmail } from "@/app/actions/generate-email";
@@ -37,6 +38,7 @@ export default function KundeDetailClient({
   const [loeschDialogOffen, setLoeschDialogOffen] = useState(false);
   const [loeschAktivitaetenCount, setLoeschAktivitaetenCount] = useState(0);
   const [loeschPipelineCount, setLoeschPipelineCount] = useState(0);
+  const [loeschWiedervorlagenCount, setLoeschWiedervorlagenCount] = useState(0);
   const [loeschCountFehler, setLoeschCountFehler] = useState(false);
 
   function handleChange(field: keyof Kunde, value: string | number) {
@@ -82,6 +84,7 @@ export default function KundeDetailClient({
   async function handleDelete() {
     setIsLoading(true);
     let aktCount = 0;
+    let wvCount = 0;
     let countFehler = false;
 
     try {
@@ -95,9 +98,21 @@ export default function KundeDetailClient({
       countFehler = true;
     }
 
+    try {
+      const { count } = await supabase
+        .from("wiedervorlagen")
+        .select("*", { count: "exact", head: true })
+        .eq("customer_id", kunde.supabase_uuid!)
+        .eq("status", "offen");
+      wvCount = count ?? 0;
+    } catch {
+      // nicht kritisch — nur Kontextinfo
+    }
+
     setIsLoading(false);
     setLoeschAktivitaetenCount(aktCount);
     setLoeschPipelineCount(pipelineEintraege.length);
+    setLoeschWiedervorlagenCount(wvCount);
     setLoeschCountFehler(countFehler);
     setLoeschDialogOffen(true);
   }
@@ -413,12 +428,18 @@ export default function KundeDetailClient({
         currentUserId={currentUserId}
       />
 
+      <WiedervorlageClient
+        customerId={kunde.supabase_uuid!}
+        currentUserId={currentUserId}
+      />
+
       {loeschDialogOffen && (
         <LoeschDialog
           name={formData.firma}
           typ="Kunde"
           aktivitaetenCount={loeschAktivitaetenCount}
           pipelineCount={loeschPipelineCount}
+          wiedervorlagenCount={loeschWiedervorlagenCount}
           countFehler={loeschCountFehler}
           onBestaetigen={fuehreLoeschenAus}
           onAbbrechen={() => setLoeschDialogOffen(false)}

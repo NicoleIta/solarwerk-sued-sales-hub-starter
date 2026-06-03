@@ -40,5 +40,16 @@ export default async function PipelineDetailPage({
 
   const canDelete = isAdmin || permissions.pipeline.delete;
 
-  return <PipelineDetailClient eintrag={eintrag} canDelete={canDelete} />;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const currentUserId = user?.id ?? "";
+
+  return (
+    <PipelineDetailClient
+      eintrag={eintrag}
+      canDelete={canDelete}
+      currentUserId={currentUserId}
+    />
+  );
 }

@@ -7,13 +7,16 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { PipelineEintrag } from "@/types";
 import { supabase } from "@/lib/supabase";
 import LoeschDialog from "@/app/loeschdialog";
+import WiedervorlageClient from "@/app/wiedervorlage-client";
 
 export default function PipelineDetailClient({
   eintrag,
   canDelete,
+  currentUserId,
 }: {
   eintrag: PipelineEintrag;
   canDelete: boolean;
+  currentUserId: string;
 }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -184,6 +187,11 @@ export default function PipelineDetailClient({
           </div>
         </form>
       </div>
+
+      <WiedervorlageClient
+        pipelineEntryId={eintrag.supabase_uuid!}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }

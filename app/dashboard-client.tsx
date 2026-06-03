@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Users, CheckCircle, AlertTriangle, Wrench } from "lucide-react";
-import { Kunde, UserRole } from "@/types";
+import Link from "next/link";
+import { Users, CheckCircle, AlertTriangle, Wrench, Bell, Check } from "lucide-react";
+import { Kunde, UserRole, Wiedervorlage } from "@/types";
 import FilterBar from "@/components/filter-bar";
 import StatKarte from "@/components/stat-karte";
 import type { FilterValues, FilterDefinition } from "@/components/filter-bar";
@@ -38,11 +39,26 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
   const [mitarbeiterFilter, setMitarbeiterFilter] = useState(istBerechtigt ? "" : currentUserId);
   const [kpis, setKpis] = useState<{ gesamt: number | null; aktive: number | null; inWartung: number | null; beschwerden: number | null }>({ gesamt: null, aktive: null, inWartung: null, beschwerden: null });
   const [kpisLaden, setKpisLaden] = useState(true);
+  const [wiedervorlagen, setWiedervorlagen] = useState<Wiedervorlage[]>([]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSuche(filterValues.suche), 300);
     return () => clearTimeout(t);
   }, [filterValues.suche]);
+
+  useEffect(() => {
+    async function fetchWiedervorlagen() {
+      const heute = new Date().toISOString().slice(0, 10);
+      const { data } = await supabase
+        .from("wiedervorlagen")
+        .select("*, kunden(firma, int_id), pipeline(titel, id)")
+        .lte("due_date", heute)
+        .eq("status", "offen")
+        .order("due_date", { ascending: true });
+      setWiedervorlagen((data ?? []) as Wiedervorlage[]);
+    }
+    fetchWiedervorlagen();
+  }, []);
 
   useEffect(() => {
     async function fetchKunden() {
@@ -153,6 +169,19 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
     return u ? `${u.vorname} ${u.nachname}` : "—";
   }
 
+  function formatWvDatum(iso: string) {
+    return new Date(iso + "T00:00:00").toLocaleDateString("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
+
+  async function wvErledigen(id: string) {
+    await supabase.from("wiedervorlagen").update({ status: "erledigt" }).eq("id", id);
+    setWiedervorlagen((prev) => prev.filter((w) => w.id !== id));
+  }
+
   async function zustaendigZuweisen(kundeId: number, zustaendig_id: string | null) {
     await fetch(`/api/kunden/${kundeId}`, {
       method: "PATCH",
@@ -173,6 +202,62 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
           <span>Kein Zugriff auf diese Seite.</span>
           <button onClick={() => setZugangsFehler(false)} className="text-red-500 hover:text-red-700 dark:hover:text-red-200 ml-4">✕</button>
         </div>
+      )}
+
+      {wiedervorlagen.length > 0 && (
+        <section className="mb-8 rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30 p-4">
+          <h2 className="mb-3 flex items-center gap-2 font-semibold text-orange-800 dark:text-orange-300">
+            <Bell className="h-4 w-4" />
+            Wiedervorlagen ({wiedervorlagen.length})
+          </h2>
+          <ul className="space-y-2">
+            {wiedervorlagen.map((wv) => (
+              <li
+                key={wv.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-orange-100 bg-white dark:border-orange-900 dark:bg-gray-900 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {wv.kunden?.firma ?? wv.pipeline?.titel ?? "—"}
+                  </span>
+                  {wv.reason && (
+                    <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                      {wv.reason}
+                    </span>
+                  )}
+                  <span className="ml-2 text-xs font-medium text-orange-600 dark:text-orange-400">
+                    {formatWvDatum(wv.due_date)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {wv.kunden && (
+                    <Link
+                      href={`/kunden/${wv.kunden.int_id}`}
+                      className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      Zum Kunden →
+                    </Link>
+                  )}
+                  {wv.pipeline && (
+                    <Link
+                      href={`/pipeline/${wv.pipeline.id}`}
+                      className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      Zur Pipeline →
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => wvErledigen(wv.id)}
+                    className="inline-flex items-center gap-1 rounded-md border border-green-300 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    Erledigt
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-4">

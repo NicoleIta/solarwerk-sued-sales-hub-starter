@@ -56,6 +56,19 @@ export interface UserPermissions {
   benutzerverwaltung: BereichPermission;
 }
 
+export interface Wiedervorlage {
+  id: string;
+  customer_id: string | null;
+  pipeline_entry_id: string | null;
+  due_date: string;
+  reason: string | null;
+  status: 'offen' | 'erledigt';
+  user_id: string;
+  created_at: string;
+  kunden?: { firma: string; int_id: number } | null;
+  pipeline?: { titel: string; id: string } | null;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
