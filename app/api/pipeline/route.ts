@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       betrag: Number(body.volumen_eur) || null,
       datum: body.angebotsdatum || null,
       notizen: body.notiz || null,
+      zustaendig_id: body.zustaendig_id || null,
       ...(kundeUuid ? { kunde_id: kundeUuid } : {}),
     })
     .select("id")

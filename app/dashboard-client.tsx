@@ -3,17 +3,30 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Users, CheckCircle, AlertTriangle, Wrench } from "lucide-react";
-import { Kunde } from "@/types";
+import { Kunde, UserRole } from "@/types";
 import FilterBar from "@/components/filter-bar";
 import StatKarte from "@/components/stat-karte";
 import type { FilterValues, FilterDefinition } from "@/components/filter-bar";
 import { supabase } from "@/lib/supabase";
+import { isAdminOrTeamleiter } from "@/lib/permissions";
 
-export default function DashboardClient() {
+type ActiveUser = { id: string; vorname: string; nachname: string };
+
+interface Props {
+  activeUsers: ActiveUser[];
+  currentUserId: string;
+  currentUserRole: UserRole;
+}
+
+type KundeMitZustaendig = Kunde & { zustaendig_id: string | null };
+
+export default function DashboardClient({ activeUsers, currentUserId, currentUserRole }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const istBerechtigt = isAdminOrTeamleiter(currentUserRole);
+
   const [zugangsFehler, setZugangsFehler] = useState(searchParams.get("error") === "kein-zugriff");
-  const [kunden, setKunden] = useState<Kunde[]>([]);
+  const [kunden, setKunden] = useState<KundeMitZustaendig[]>([]);
   const [laden, setLaden] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<FilterValues>({
@@ -22,6 +35,7 @@ export default function DashboardClient() {
     suche: "",
   });
   const [debouncedSuche, setDebouncedSuche] = useState("");
+  const [mitarbeiterFilter, setMitarbeiterFilter] = useState(istBerechtigt ? "" : currentUserId);
   const [kpis, setKpis] = useState<{ gesamt: number | null; aktive: number | null; inWartung: number | null; beschwerden: number | null }>({ gesamt: null, aktive: null, inWartung: null, beschwerden: null });
   const [kpisLaden, setKpisLaden] = useState(true);
 
@@ -59,6 +73,7 @@ export default function DashboardClient() {
             telefon: k.telefon,
             email: k.email,
             notiz: k.notiz,
+            zustaendig_id: k.zustaendig_id ?? null,
           }))
         );
       }
@@ -95,6 +110,10 @@ export default function DashboardClient() {
     fetchKpis();
   }, [filterValues.status, filterValues.branche, debouncedSuche]);
 
+  const gefilterteKunden = mitarbeiterFilter
+    ? kunden.filter((k) => k.zustaendig_id === mitarbeiterFilter)
+    : kunden;
+
   const branchenOptionen = Array.from(new Set(kunden.map((k) => k.branche).filter(Boolean)))
     .sort()
     .map((b) => ({ value: b, label: b }));
@@ -126,6 +145,23 @@ export default function DashboardClient() {
     if (wert === null) return <span className="text-gray-400">—</span>;
     if (wert === 0) return <span>0 <span className="text-xs text-gray-400 font-normal">Keine Treffer</span></span>;
     return wert;
+  }
+
+  function userLabel(userId: string | null) {
+    if (!userId) return null;
+    const u = activeUsers.find((u) => u.id === userId);
+    return u ? `${u.vorname} ${u.nachname}` : "—";
+  }
+
+  async function zustaendigZuweisen(kundeId: number, zustaendig_id: string | null) {
+    await fetch(`/api/kunden/${kundeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ zustaendig_id }),
+    });
+    setKunden((prev) =>
+      prev.map((k) => (k.id === kundeId ? { ...k, zustaendig_id } : k))
+    );
   }
 
   return (
@@ -162,11 +198,29 @@ export default function DashboardClient() {
             </button>
           ))}
         </div>
-        <FilterBar
-          filters={filterDefs}
-          values={filterValues}
-          onChange={setFilterValues}
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <FilterBar
+            filters={filterDefs}
+            values={filterValues}
+            onChange={setFilterValues}
+          />
+          <select
+            value={mitarbeiterFilter}
+            onChange={(e) => setMitarbeiterFilter(e.target.value)}
+            className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+          >
+            <option value="">Alle Mitarbeiter</option>
+            {activeUsers.map((u) => (
+              <option
+                key={u.id}
+                value={u.id}
+                disabled={!istBerechtigt && u.id !== currentUserId}
+              >
+                {u.vorname} {u.nachname}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {fehler && (
@@ -184,11 +238,12 @@ export default function DashboardClient() {
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Branche</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Anlagengroesse (kWp)</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Zuständig</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Letzter Kontakt</th>
             </tr>
           </thead>
           <tbody>
-            {kunden.map((kunde) => (
+            {gefilterteKunden.map((kunde) => (
               <tr
                 key={kunde.id}
                 onClick={() => router.push(`/kunden/${kunde.id}`)}
@@ -222,14 +277,32 @@ export default function DashboardClient() {
                     <option value="beschwerde">Beschwerde</option>
                   </select>
                 </td>
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  {istBerechtigt ? (
+                    <select
+                      value={kunde.zustaendig_id ?? ""}
+                      onChange={(e) => zustaendigZuweisen(kunde.id, e.target.value || null)}
+                      className="rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 px-2 py-1 text-xs"
+                    >
+                      <option value="">— nicht zugewiesen —</option>
+                      {activeUsers.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.vorname} {u.nachname}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-gray-500">{userLabel(kunde.zustaendig_id) ?? "—"}</span>
+                  )}
+                </td>
                 <td className="px-4 py-3">{kunde.letzter_kontakt}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        {!laden && kunden.length === 0 && !fehler && (
+        {!laden && gefilterteKunden.length === 0 && !fehler && (
           <p className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
-            Keine Kunden gefunden.
+            {mitarbeiterFilter ? "Keine Einträge für diesen Mitarbeiter." : "Keine Kunden gefunden."}
           </p>
         )}
         {laden && (

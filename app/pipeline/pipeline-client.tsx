@@ -2,10 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { TrendingUp, FileText, XCircle } from "lucide-react";
-import { PipelineStatus } from "@/types";
+import { PipelineStatus, UserRole } from "@/types";
 import { PIPELINE_STYLE } from "@/components/pipeline-status-badge";
 import StatKarte from "@/components/stat-karte";
 import { supabase } from "@/lib/supabase";
+import { isAdminOrTeamleiter } from "@/lib/permissions";
+
+type ActiveUser = { id: string; vorname: string; nachname: string };
+
+interface Props {
+  activeUsers: ActiveUser[];
+  currentUserId: string;
+  currentUserRole: UserRole;
+}
 
 type SupabasePipelineEintrag = {
   id: string;
@@ -15,6 +24,7 @@ type SupabasePipelineEintrag = {
   datum: string;
   notizen: string;
   kunde_id: string;
+  zustaendig_id: string | null;
   kunden: {
     ansprechpartner: string;
     branche: string;
@@ -30,11 +40,14 @@ const STATUS_BUTTONS: { value: PipelineStatus | "alle"; label: string }[] = [
   { value: "verloren", label: "Verloren" },
 ];
 
-export default function PipelineClient() {
+export default function PipelineClient({ activeUsers, currentUserId, currentUserRole }: Props) {
+  const istBerechtigt = isAdminOrTeamleiter(currentUserRole);
+
   const [eintraege, setEintraege] = useState<SupabasePipelineEintrag[]>([]);
   const [statusFilter, setStatusFilter] = useState<PipelineStatus | "alle">("alle");
   const [suchbegriff, setSuchbegriff] = useState("");
   const [debouncedSuche, setDebouncedSuche] = useState("");
+  const [mitarbeiterFilter, setMitarbeiterFilter] = useState(istBerechtigt ? "" : currentUserId);
   const [laden, setLaden] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
   const [kpis, setKpis] = useState<{ aktivesVolumen: number | null; dynamischCount: number | null; dynamischVolumen: number | null }>({ aktivesVolumen: null, dynamischCount: null, dynamischVolumen: null });
@@ -92,6 +105,10 @@ export default function PipelineClient() {
     fetchKpis();
   }, [statusFilter, debouncedSuche]);
 
+  const gefilterteEintraege = mitarbeiterFilter
+    ? eintraege.filter((e) => e.zustaendig_id === mitarbeiterFilter)
+    : eintraege;
+
   function kpiWert(wert: number | null) {
     if (kpisLaden) return <span className="block h-5 w-10 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />;
     if (wert === null) return <span className="text-gray-400">—</span>;
@@ -105,6 +122,23 @@ export default function PipelineClient() {
     return `${wert.toLocaleString("de-DE")} €`;
   }
 
+  function userLabel(userId: string | null) {
+    if (!userId) return null;
+    const u = activeUsers.find((u) => u.id === userId);
+    return u ? `${u.vorname} ${u.nachname}` : "—";
+  }
+
+  async function zustaendigZuweisen(eintragId: string, zustaendig_id: string | null) {
+    await fetch(`/api/pipeline/${eintragId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ zustaendig_id }),
+    });
+    setEintraege((prev) =>
+      prev.map((e) => (e.id === eintragId ? { ...e, zustaendig_id } : e))
+    );
+  }
+
   const STATUS_INFO: Record<PipelineStatus | "alle", { label: string; farbe: "blue" | "green" | "red" | "orange" }> = {
     alle:         { label: "Einträge gesamt", farbe: "blue"   },
     erstkontakt:  { label: "Erstkontakt",     farbe: "blue"   },
@@ -116,7 +150,6 @@ export default function PipelineClient() {
 
   const dynInfo = STATUS_INFO[statusFilter];
   const dealsWert = kpiWert(kpis.dynamischCount);
-  // Betrags-Karte: bei Erstkontakt — anzeigen, sonst Betrag €
   const dynWert = statusFilter === "erstkontakt"
     ? <span className="text-gray-400">—</span>
     : euroWert(kpis.dynamischVolumen);
@@ -131,7 +164,7 @@ export default function PipelineClient() {
         <StatKarte icon={FileText}   label="Deals"            wert={dealsWert}                       farbe={dynInfo.farbe} />
       </div>
 
-      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="flex flex-wrap gap-1">
           {STATUS_BUTTONS.map((btn) => (
             <button
@@ -152,8 +185,24 @@ export default function PipelineClient() {
           placeholder="Suche nach Firma..."
           value={suchbegriff}
           onChange={(e) => setSuchbegriff(e.target.value)}
-          className="rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm sm:w-80"
+          className="rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm sm:w-64"
         />
+        <select
+          value={mitarbeiterFilter}
+          onChange={(e) => setMitarbeiterFilter(e.target.value)}
+          className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+        >
+          <option value="">Alle Mitarbeiter</option>
+          {activeUsers.map((u) => (
+            <option
+              key={u.id}
+              value={u.id}
+              disabled={!istBerechtigt && u.id !== currentUserId}
+            >
+              {u.vorname} {u.nachname}
+            </option>
+          ))}
+        </select>
       </div>
 
       {fehler && (
@@ -172,10 +221,11 @@ export default function PipelineClient() {
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Betrag (€)</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Datum</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Zuständig</th>
             </tr>
           </thead>
           <tbody>
-            {eintraege.map((eintrag) => (
+            {gefilterteEintraege.map((eintrag) => (
               <tr
                 key={eintrag.id}
                 className="border-b border-gray-100 dark:border-gray-700"
@@ -190,13 +240,31 @@ export default function PipelineClient() {
                     {eintrag.status.replace("_", " ")}
                   </span>
                 </td>
+                <td className="px-4 py-3">
+                  {istBerechtigt ? (
+                    <select
+                      value={eintrag.zustaendig_id ?? ""}
+                      onChange={(e) => zustaendigZuweisen(eintrag.id, e.target.value || null)}
+                      className="rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 px-2 py-1 text-xs"
+                    >
+                      <option value="">— nicht zugewiesen —</option>
+                      {activeUsers.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.vorname} {u.nachname}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-gray-500">{userLabel(eintrag.zustaendig_id) ?? "—"}</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {!laden && eintraege.length === 0 && !fehler && (
+        {!laden && gefilterteEintraege.length === 0 && !fehler && (
           <p className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
-            Keine Einträge gefunden.
+            {mitarbeiterFilter ? "Keine Einträge für diesen Mitarbeiter." : "Keine Einträge gefunden."}
           </p>
         )}
         {laden && (
