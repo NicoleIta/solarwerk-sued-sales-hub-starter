@@ -6,41 +6,43 @@ import { useEffect, useState } from "react";
 import ThemeToggle from "@/app/theme-toggle";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
+import type { UserPermissions, UserRole } from "@/types";
 
-export default function Navigation() {
+interface Props {
+  permissions: UserPermissions | null;
+  role: UserRole | null;
+}
+
+export default function Navigation({ permissions, role }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+
+  const isAdmin = role === "admin";
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setCurrentUser(session?.user ?? null);
-      if (session?.user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-        setIsAdmin(data?.role === "admin");
-      } else {
-        setIsAdmin(false);
-      }
     });
   }, [pathname]);
 
   async function handleAbmelden() {
     await supabase.auth.signOut();
     setCurrentUser(null);
-    setIsAdmin(false);
     router.push("/login");
   }
 
   const links = [
     { href: "/", label: "Dashboard" },
-    { href: "/pipeline", label: "Pipeline" },
-    { href: "/berichte", label: "Berichte" },
-    { href: "/kunden/neu", label: "Neuer Kunde" },
+    ...(isAdmin || !permissions || permissions.pipeline.read
+      ? [{ href: "/pipeline", label: "Pipeline" }]
+      : []),
+    ...(isAdmin || !permissions || permissions.berichte.read
+      ? [{ href: "/berichte", label: "Berichte" }]
+      : []),
+    ...(isAdmin || !permissions || permissions.kunden.read
+      ? [{ href: "/kunden/neu", label: "Neuer Kunde" }]
+      : []),
     ...(isAdmin ? [{ href: "/admin/users", label: "Benutzerverwaltung" }] : []),
   ];
 
