@@ -6,30 +6,116 @@ prompts:
 providers:
   - id: openrouter:anthropic/claude-haiku-4-5
 
-tests:
-  - description: "Bäckerei Huber"
-    vars:
-      firma: "Bäckerei Huber GmbH"
-      ansprechpartner: "Thomas Huber"
-      branche: "Lebensmittelhandwerk"
-      notiz: "Interesse an Stromspeicher für Backofen-Lastspitzen"
-    assert:
-      - type: contains
-        value: "Solarwerk Süd"
-      - type: icontains
-        value: "solar"
-      - type: javascript
-        value: "output.length > 200"
+# Deterministische Checks gelten für alle 5 Testfälle
+defaultTest:
+  assert:
+    # Nachname prüfen (E-Mails nutzen "Herr Eichinger", nicht "Stefan Eichinger")
+    - type: javascript
+      value: "output.includes('{{ansprechpartner}}'.split(' ').slice(-1)[0])"
+    - type: not-icontains
+      value: "Dear"
+    - type: not-icontains
+      value: "Best regards"
+    - type: not-icontains
+      value: "Sincerely"
+    - type: not-icontains
+      value: "Hello"
+    - type: not-regex
+      value: "\\{[^}]+\\}"
+    - type: javascript
+      value: "output.split(/\\s+/).filter(w => w.length > 0).length <= 300"
 
-  - description: "Autowerkstatt ohne Notiz"
+tests:
+  - description: "Früher Lead — Eichinger Metallbau OHG"
     vars:
-      firma: "KFZ-Technik Mayer"
-      ansprechpartner: "Sandra Mayer"
-      branche: "Kfz-Gewerbe"
+      firma: "Eichinger Metallbau OHG"
+      ansprechpartner: "Stefan Eichinger"
+      branche: "Metallbau"
+      pipeline_stufe: "Lead"
+      notiz: "Erste Wartung Q3 fällig"
     assert:
-      - type: contains
-        value: "Solarwerk Süd"
-      - type: icontains
-        value: "solar"
-      - type: javascript
-        value: "output.length > 200"
+      - type: llm-rubric
+        provider: openrouter:anthropic/claude-haiku-4-5
+        value: |
+          Bewerte diese E-Mail anhand von drei Kriterien. Antworte mit PASS wenn ALLE erfüllt sind, sonst FAIL. Füge eine Zeile Begründung an.
+
+          Kriterium 1 — Keine erfundenen kundenspezifischen Fakten: Die E-Mail darf keine konkreten Tatsachen über DIESEN Kunden erfinden (z.B. vorherige Gespräche, bereits besichtigte Anlagen, vereinbarte Konditionen). Allgemeines Branchenwissen ist erlaubt (z.B. "Metallbau ist energieintensiv", "Dach- oder Hallenfläche eignen sich für Solar") — das gilt nicht als Erfindung.
+
+          Kriterium 2 — Ton passt zu Lead-Stufe: Die E-Mail wirkt einladend und unverbindlich. Sie weckt Interesse ohne zu drängen. Kein Verkaufsdruck, kein "müssen Sie jetzt entscheiden".
+
+          Kriterium 3 — Notiz zur Wartung Q3 wird aufgegriffen: Die Notiz "Erste Wartung Q3 fällig" muss in irgendeiner Form in der E-Mail anklingen (z.B. Hinweis auf Wartungsservice, Q3, bevorstehenden Check). Fehlt jeder Bezug, gilt dies als FAIL.
+
+  - description: "Heißer Lead — Kfz-Werkstatt Sedlmeier (Verhandlung)"
+    vars:
+      firma: "Kfz-Werkstatt Sedlmeier"
+      ansprechpartner: "Markus Sedlmeier"
+      branche: "Kfz-Gewerbe"
+      pipeline_stufe: "Verhandlung"
+      notiz: "Unterschrift für KW 21 zugesagt"
+    assert:
+      - type: llm-rubric
+        provider: openrouter:anthropic/claude-haiku-4-5
+        value: |
+          Bewerte diese E-Mail anhand von drei Kriterien. Antworte mit PASS wenn ALLE erfüllt sind, sonst FAIL. Füge eine Zeile Begründung an.
+
+          Kriterium 1 — Keine erfundenen kundenspezifischen Fakten: FAIL wenn die E-Mail konkrete frühere Gespräche, Präsentationen oder Meetings erfindet, die nicht in den Daten stehen (z.B. "nachdem wir Ihnen unsere Lösung präsentiert haben", "wie in unserem letzten Gespräch vereinbart"). Allgemeines Branchenwissen ist erlaubt ("Kfz-Werkstätten haben hohen Strombedarf"). PASS wenn die E-Mail die Notiz "Unterschrift für KW 21 zugesagt" direkt als Fakt aufgreift ohne erfundene Vorgeschichte. Eingabe-Daten: Firma=Kfz-Werkstatt Sedlmeier, Ansprechpartner=Markus Sedlmeier, Branche=Kfz-Gewerbe, Notiz="Unterschrift für KW 21 zugesagt".
+
+          Kriterium 2 — Ton passt zu Verhandlungs-Stufe: Die E-Mail ist konkret und verbindlich. Ein nächster Schritt wird klar benannt (z.B. Unterschrift, Termin, Bestätigung). Kein unverbindliches "vielleicht mal reden".
+
+          Kriterium 3 — Notiz wird aufgegriffen: Die zugesagte Unterschrift für KW 21 wird sinnvoll in die E-Mail integriert.
+
+  - description: "Eingeschlafener Kunde — Pension Alpenblick"
+    vars:
+      firma: "Pension Alpenblick"
+      ansprechpartner: "Herbert Waldner"
+      branche: "Gastgewerbe"
+      pipeline_stufe: "Lead"
+      notiz: "Letzter Kontakt: 2026-01-10"
+    assert:
+      - type: llm-rubric
+        provider: openrouter:anthropic/claude-haiku-4-5
+        value: |
+          Bewerte diese E-Mail anhand von drei Kriterien. Antworte mit PASS wenn ALLE erfüllt sind, sonst FAIL. Füge eine Zeile Begründung an.
+
+          Kriterium 1 — Keine erfundenen Fakten: Nur Details aus diesen Eingabe-Daten: Firma=Pension Alpenblick, Ansprechpartner=Herbert Waldner, Branche=Gastgewerbe, Pipeline-Stufe=Lead, Notiz="Letzter Kontakt: 2026-01-10".
+
+          Kriterium 2 — Ton passt zu reaktivierendem Lead: Die E-Mail wirkt einladend und reaktivierend. Sie berücksichtigt, dass der letzte Kontakt mehrere Monate zurückliegt — ohne aufdringlich zu sein oder die Pause zu ignorieren.
+
+          Kriterium 3 — Sauberer Umgang mit der Kontaktpause: Die E-Mail erfindet keinen Grund für die Pause und drängt nicht. Sie knüpft sensibel wieder an.
+
+  - description: "Minimale Daten — Sägewerk Brandl"
+    vars:
+      firma: "Sägewerk Brandl"
+      ansprechpartner: "Anton Brandl"
+      branche: "Holzverarbeitung"
+      pipeline_stufe: "Lead"
+    assert:
+      - type: llm-rubric
+        provider: openrouter:anthropic/claude-haiku-4-5
+        value: |
+          Bewerte diese E-Mail anhand von drei Kriterien. Antworte mit PASS wenn ALLE erfüllt sind, sonst FAIL. Füge eine Zeile Begründung an.
+
+          Kriterium 1 — Keine erfundenen Fakten (kritisch): Es wurden KEINE Notizen, kein Datum, kein Telefon angegeben. Eingabe-Daten beschränken sich auf: Firma=Sägewerk Brandl, Ansprechpartner=Anton Brandl, Branche=Holzverarbeitung, Pipeline-Stufe=Lead. Jede erwähnte Information, die über Firma, Name und Branche hinausgeht (z.B. konkrete Projekte, Termine, frühere Gespräche), ist eine Erfindung → FAIL.
+
+          Kriterium 2 — Sauberer Umgang mit fehlenden Daten: Die E-Mail ist allgemein gehalten und kommt ohne Spezifika aus, die nicht in den Daten stehen.
+
+          Kriterium 3 — Trotzdem professionell: Die E-Mail wirkt trotz minimaler Datenlage kompetent und relevant.
+
+  - description: "Verloren — Kunststofftechnik Vogl GmbH"
+    vars:
+      firma: "Kunststofftechnik Vogl GmbH"
+      ansprechpartner: "Dieter Vogl"
+      branche: "Kunststoffverarbeitung"
+      pipeline_stufe: "Verloren"
+      notiz: "Kein weiterer Bedarf signalisiert"
+    assert:
+      - type: llm-rubric
+        provider: openrouter:anthropic/claude-haiku-4-5
+        value: |
+          Bewerte diesen Output anhand von drei Kriterien. Antworte mit PASS wenn ALLE erfüllt sind, sonst FAIL. Füge eine Zeile Begründung an.
+
+          Kriterium 1 — Explizite Entscheidung sichtbar (kritisch): Der Output muss KLAR zeigen, ob es sich um einen Rückgewinnungsversuch handelt ODER ob von einer Kontaktaufnahme abgeraten wird. Eine E-Mail ohne Entscheidungszeile am Anfang gilt als FAIL, weil die Entscheidung implizit bleibt.
+
+          Kriterium 2 — Keine erfundenen Fakten: Nur Details aus diesen Daten: Firma=Kunststofftechnik Vogl GmbH, Ansprechpartner=Dieter Vogl, Branche=Kunststoffverarbeitung, Pipeline-Stufe=Verloren, Notiz="Kein weiterer Bedarf signalisiert".
+
+          Kriterium 3 — Kontext berücksichtigt: Die Entscheidung trägt dem Hinweis "Kein weiterer Bedarf signalisiert" Rechnung. PASS wenn: (a) Ablehnung der Kontaktaufnahme ODER (b) Rückgewinnungsversuch mit irgendeinem genannten Grund (auch allgemein wie veränderte Marktlage, gestiegene Energiekosten). FAIL nur wenn der Output so tut, als wäre kein Ablehnungssignal vorhanden, oder komplett widersprüchlich ist.
