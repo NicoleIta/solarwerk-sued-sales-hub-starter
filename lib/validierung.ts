@@ -1,8 +1,8 @@
 export type NeuerKundeInput = {
   firma: string
   ansprechpartner: string
+  telefon: string
   email: string
-  branche: string
 }
 
 export type Validierungsfehler = {
@@ -22,8 +22,8 @@ export function validiereNeuerKunde(input: NeuerKundeInput): Validierungsfehler[
   if (!input.email.trim()) {
     fehler.push({ feld: 'email', meldung: 'E-Mail ist ein Pflichtfeld' })
   }
-  if (!input.branche.trim()) {
-    fehler.push({ feld: 'branche', meldung: 'Branche ist ein Pflichtfeld' })
+  if (!input.telefon.trim()) {
+    fehler.push({ feld: 'telefon', meldung: 'Telefon ist ein Pflichtfeld' })
   }
 
   return fehler

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import FormField from "@/components/form-field";
 import { UserRole } from "@/types";
 import { isAdminOrTeamleiter } from "@/lib/permissions";
+import { validiereNeuerKunde } from "@/lib/validierung";
 
 type ActiveUser = { id: string; vorname: string; nachname: string };
 
@@ -14,7 +15,6 @@ interface Props {
   currentUserRole: UserRole;
 }
 
-const REQUIRED_FIELDS = ["firma", "ansprechpartner", "telefon", "email"] as const;
 
 export default function NeuerKundeForm({ activeUsers, currentUserId, currentUserRole }: Props) {
   const router = useRouter();
@@ -49,18 +49,24 @@ export default function NeuerKundeForm({ activeUsers, currentUserId, currentUser
 
   function handleBlur(e: React.FocusEvent<HTMLInputElement>) {
     const { name, value } = e.target;
-    if (REQUIRED_FIELDS.includes(name as typeof REQUIRED_FIELDS[number]) && !value.trim()) {
-      setErrors((prev) => ({ ...prev, [name]: "Pflichtfeld" }));
+    const result = validiereNeuerKunde({ ...formData, [name]: value });
+    const feldFehler = result.find(f => f.feld === name);
+    if (feldFehler) {
+      setErrors(prev => ({ ...prev, [name]: feldFehler.meldung }));
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const newErrors: Record<string, string> = {};
-    for (const field of REQUIRED_FIELDS) {
-      if (!formData[field].trim()) newErrors[field] = "Pflichtfeld";
-    }
-    if (Object.keys(newErrors).length > 0) {
+    const fehler = validiereNeuerKunde({
+      firma: formData.firma,
+      ansprechpartner: formData.ansprechpartner,
+      telefon: formData.telefon,
+      email: formData.email,
+    });
+    if (fehler.length > 0) {
+      const newErrors: Record<string, string> = {};
+      fehler.forEach(f => { newErrors[f.feld] = f.meldung });
       setErrors(newErrors);
       return;
     }

@@ -4,8 +4,8 @@ import { validiereNeuerKunde, istGueltig } from './validierung'
 const gueltigeEingabe = {
   firma: 'Musterfirma GmbH',
   ansprechpartner: 'Max Muster',
+  telefon: '0711 123456',
   email: 'max@musterfirma.de',
-  branche: 'Gewerbe',
 }
 
 describe('validiereNeuerKunde', () => {
@@ -33,7 +33,7 @@ describe('validiereNeuerKunde', () => {
   })
 
   it('meldet mehrere Fehler wenn mehrere Felder fehlen', () => {
-    const fehler = validiereNeuerKunde({ firma: '', ansprechpartner: '', email: '', branche: '' })
+    const fehler = validiereNeuerKunde({ firma: '', ansprechpartner: '', telefon: '', email: '' })
     expect(fehler).toHaveLength(4)
   })
 
