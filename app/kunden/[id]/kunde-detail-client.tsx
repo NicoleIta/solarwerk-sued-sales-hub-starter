@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, Zap } from "lucide-react";
 import { Aktivitaet, Kunde, KundenStatus, PipelineEintrag } from "@/types";
 import StatusBadge from "@/app/status-badge";
 import InfoField from "@/components/info-field";
@@ -13,6 +13,7 @@ import WiedervorlageClient from "@/app/wiedervorlage-client";
 import LoeschDialog from "@/app/loeschdialog";
 import { supabase } from "@/lib/supabase";
 import { generateEmail } from "@/app/actions/generate-email";
+import { generateNaechsteAktion, NaechsteAktion } from "@/app/actions/generate-naechste-aktion";
 
 export default function KundeDetailClient({
   kunde,
@@ -35,6 +36,9 @@ export default function KundeDetailClient({
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailModal, setEmailModal] = useState<{ text: string; error?: boolean } | null>(null);
   const [kopiert, setKopiert] = useState(false);
+  const [aktionLoading, setAktionLoading] = useState(false);
+  const [aktionErgebnis, setAktionErgebnis] = useState<NaechsteAktion | null>(null);
+  const [aktionFehler, setAktionFehler] = useState<string | null>(null);
   const [loeschDialogOffen, setLoeschDialogOffen] = useState(false);
   const [loeschAktivitaetenCount, setLoeschAktivitaetenCount] = useState(0);
   const [loeschPipelineCount, setLoeschPipelineCount] = useState(0);
@@ -147,6 +151,27 @@ export default function KundeDetailClient({
       setEmailModal({ text: (e as Error).message, error: true });
     } finally {
       setEmailLoading(false);
+    }
+  }
+
+  async function handleAktionGenerieren() {
+    setAktionLoading(true);
+    setAktionErgebnis(null);
+    setAktionFehler(null);
+    try {
+      const ergebnis = await generateNaechsteAktion({
+        firma: formData.firma,
+        ansprechpartner: formData.ansprechpartner,
+        branche: formData.branche,
+        status: formData.status,
+        letzter_kontakt: formData.letzter_kontakt || null,
+        notiz: formData.notiz ?? null,
+      });
+      setAktionErgebnis(ergebnis);
+    } catch (e) {
+      setAktionFehler((e as Error).message);
+    } finally {
+      setAktionLoading(false);
     }
   }
 
@@ -348,18 +373,56 @@ export default function KundeDetailClient({
 
       <div className="mt-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-6 py-4">
         <h2 className="mb-3 font-semibold text-gray-800 dark:text-gray-200">Aktionen</h2>
-        <button
-          onClick={handleEmailGenerieren}
-          disabled={emailLoading}
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {emailLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Mail className="h-4 w-4" />
-          )}
-          E-Mail generieren
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={handleEmailGenerieren}
+            disabled={emailLoading}
+            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {emailLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Mail className="h-4 w-4" />
+            )}
+            E-Mail generieren
+          </button>
+          <button
+            onClick={handleAktionGenerieren}
+            disabled={aktionLoading}
+            className="inline-flex items-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+          >
+            {aktionLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Zap className="h-4 w-4" />
+            )}
+            Nächste Aufgabe generieren
+          </button>
+        </div>
+
+        {aktionFehler && (
+          <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400">
+            {aktionFehler}
+          </div>
+        )}
+
+        {aktionErgebnis && (
+          <div className="mt-4 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3">
+            <div className="mb-2">
+              <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                aktionErgebnis.badge === "dringend"
+                  ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                  : aktionErgebnis.badge === "warten"
+                  ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                  : "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+              }`}>
+                {aktionErgebnis.badge}
+              </span>
+            </div>
+            <p className="text-sm text-gray-800 dark:text-gray-200">{aktionErgebnis.aktion}</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{aktionErgebnis.begruendung}</p>
+          </div>
+        )}
       </div>
 
       <div className="mt-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
