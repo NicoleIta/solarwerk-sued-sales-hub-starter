@@ -42,3 +42,6 @@ next-env.d.ts
 
 # promptfoo results (auto-generiert, nicht committen)
 results*.json
+
+# Kundendaten (lokal / Supabase ist die Quelle)
+data/*.csv
