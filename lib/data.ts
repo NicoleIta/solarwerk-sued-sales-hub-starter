@@ -1,7 +1,7 @@
-import fs from 'fs';
-import path from 'path';
-import Papa from 'papaparse';
-import { Kunde, PipelineEintrag } from '@/types';
+import fs from "fs";
+import path from "path";
+import Papa from "papaparse";
+import { Kunde, PipelineEintrag } from "@/types";
 
 export function getKunden(): Kunde[] {
   const filePath = path.join(process.cwd(), 'data', 'solarwerk_kunden.csv');

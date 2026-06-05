@@ -110,7 +110,7 @@ export async function POST(request: Request) {
       telefon: telefon || null,
       austrittsdatum: austrittsdatum || null,
       aktiv: true,
-      permissions: DEFAULT_PERMISSIONS,
+      permissions: body.permissions ?? DEFAULT_PERMISSIONS,
       temp_password,
       muss_passwort_aendern: true,
     });

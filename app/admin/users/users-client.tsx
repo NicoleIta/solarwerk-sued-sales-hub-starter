@@ -391,7 +391,7 @@ export default function UsersClient({ profiles: initial, currentUserId }: Props)
               ))}
               {sortierte.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
+                  <td colSpan={9} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
                     Keine Benutzer vorhanden.
                   </td>
                 </tr>
