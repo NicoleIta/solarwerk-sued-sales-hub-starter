@@ -1,0 +1,63 @@
+prompts:
+  - prompts/zusammenfassung.md           # Positiv — soll PASS
+  - prompts/zusammenfassung-negativ.md   # Negativ — soll FAIL (Rot-Check)
+
+providers:
+  - id: openrouter:anthropic/claude-haiku-4-5
+    config:
+      apiKey: "{{env.OPENROUTER_API_KEY}}"
+
+defaultTest:
+  assert:
+    - type: not-icontains
+      value: "Dear"
+    - type: not-icontains
+      value: "Best regards"
+  options:
+    provider:
+      id: openrouter:anthropic/claude-haiku-4-5
+      config:
+        apiKey: "{{env.OPENROUTER_API_KEY}}"
+
+tests:
+  - description: "Lead — Neukunde Eichinger Metallbau"
+    vars:
+      firma: "Eichinger Metallbau OHG"
+      ansprechpartner: "Stefan Eichinger"
+      branche: "Metallbau"
+      pipeline_stufe: "Lead"
+      notiz: "Erste Wartung Q3 fällig"
+    assert:
+      - type: llm-rubric
+        value: |
+          Kriterium 1 — Keine erfundenen Fakten: Nur Infos aus den Eingaben verwenden. FAIL wenn erfunden.
+          Kriterium 2 — Pipeline-Stufe erklärt: Die Zusammenfassung erklärt dass es sich um einen Lead handelt. FAIL wenn nicht erwähnt.
+          Kriterium 3 — Notiz aufgegriffen: "Erste Wartung Q3 fällig" kommt sinnvoll vor. FAIL wenn ignoriert.
+
+  - description: "Verhandlung — Kfz-Werkstatt Sedlmeier"
+    vars:
+      firma: "Kfz-Werkstatt Sedlmeier"
+      ansprechpartner: "Markus Sedlmeier"
+      branche: "Kfz-Gewerbe"
+      pipeline_stufe: "Verhandlung"
+      notiz: "Unterschrift für KW 21 zugesagt"
+    assert:
+      - type: llm-rubric
+        value: |
+          Kriterium 1 — Keine erfundenen Fakten: Nur Infos aus den Eingaben verwenden. FAIL wenn erfunden.
+          Kriterium 2 — Pipeline-Stufe erklärt: Die Zusammenfassung erklärt dass sich der Kunde in Verhandlung befindet. FAIL wenn nicht erwähnt.
+          Kriterium 3 — Notiz aufgegriffen: "Unterschrift für KW 21 zugesagt" kommt sinnvoll vor. FAIL wenn ignoriert.
+
+  - description: "Verloren — Kunststofftechnik Vogl"
+    vars:
+      firma: "Kunststofftechnik Vogl GmbH"
+      ansprechpartner: "Dieter Vogl"
+      branche: "Kunststoffverarbeitung"
+      pipeline_stufe: "Verloren"
+      notiz: "Kein weiterer Bedarf signalisiert"
+    assert:
+      - type: llm-rubric
+        value: |
+          Kriterium 1 — Keine erfundenen Fakten: Nur Infos aus den Eingaben verwenden. FAIL wenn erfunden.
+          Kriterium 2 — Pipeline-Stufe erklärt: Die Zusammenfassung erklärt dass der Kunde verloren ist. FAIL wenn nicht erwähnt.
+          Kriterium 3 — Notiz aufgegriffen: "Kein weiterer Bedarf signalisiert" kommt sinnvoll vor. FAIL wenn ignoriert.

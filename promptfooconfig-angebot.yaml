@@ -1,0 +1,66 @@
+prompts:
+  - prompts/angebot.md           # Positiv — soll PASS
+  - prompts/angebot-negativ.md   # Negativ — soll FAIL (Rot-Check)
+
+providers:
+  - id: openrouter:anthropic/claude-haiku-4-5
+    config:
+      apiKey: "{{env.OPENROUTER_API_KEY}}"
+
+defaultTest:
+  assert:
+    - type: not-icontains
+      value: "Dear"
+    - type: not-icontains
+      value: "Best regards"
+  options:
+    provider:
+      id: openrouter:anthropic/claude-haiku-4-5
+      config:
+        apiKey: "{{env.OPENROUTER_API_KEY}}"
+
+tests:
+  - description: "Privathaushalt — Familie Bergmann"
+    vars:
+      firma: "Familie Bergmann"
+      ansprechpartner: "Thomas Bergmann"
+      branche: "Privat"
+      anlagengroesse_kwp: "10"
+      notiz: "Interesse an Batteriespeicher, Entscheidung bis Ende Juli"
+    assert:
+      - type: llm-rubric
+        value: |
+          Kriterium 1 — Sprache: Das Angebot ist auf Deutsch. FAIL wenn Englisch.
+          Kriterium 2 — Keine erfundenen Zahlen: Es werden keine Preise oder Werte erfunden die nicht in den Eingaben stehen. FAIL wenn erfunden.
+          Kriterium 3 — Anlagengröße erwähnt: Der Wert 10 kWp kommt im Text vor. FAIL wenn nicht erwähnt.
+          Kriterium 4 — Notiz aufgegriffen: Der Batteriespeicher oder die Deadline wird erwähnt. FAIL wenn ignoriert.
+
+  - description: "Gewerbe — Bäckerei Huber GmbH"
+    vars:
+      firma: "Bäckerei Huber GmbH"
+      ansprechpartner: "Maria Huber"
+      branche: "Gewerbe"
+      anlagengroesse_kwp: "45"
+      notiz: "Hoher Eigenverbrauch tagsüber, Betrieb läuft 5-22 Uhr"
+    assert:
+      - type: llm-rubric
+        value: |
+          Kriterium 1 — Sprache: Das Angebot ist auf Deutsch. FAIL wenn Englisch.
+          Kriterium 2 — Keine erfundenen Zahlen: Es werden keine Preise oder Werte erfunden. FAIL wenn erfunden.
+          Kriterium 3 — Anlagengröße erwähnt: Der Wert 45 kWp kommt im Text vor. FAIL wenn nicht erwähnt.
+          Kriterium 4 — Notiz aufgegriffen: Der Eigenverbrauch oder die Betriebszeiten werden erwähnt. FAIL wenn ignoriert.
+
+  - description: "Landwirtschaft — Biohof Steinmayr"
+    vars:
+      firma: "Biohof Steinmayr"
+      ansprechpartner: "Klaus Steinmayr"
+      branche: "Landwirtschaft"
+      anlagengroesse_kwp: "120"
+      notiz: "Förderantrag läuft bereits, Montage erst ab September möglich"
+    assert:
+      - type: llm-rubric
+        value: |
+          Kriterium 1 — Sprache: Das Angebot ist auf Deutsch. FAIL wenn Englisch.
+          Kriterium 2 — Keine erfundenen Zahlen: Es werden keine Preise oder Werte erfunden. FAIL wenn erfunden.
+          Kriterium 3 — Anlagengröße erwähnt: Der Wert 120 kWp kommt im Text vor. FAIL wenn nicht erwähnt.
+          Kriterium 4 — Notiz aufgegriffen: Der Förderantrag oder der September-Termin wird erwähnt. FAIL wenn ignoriert.

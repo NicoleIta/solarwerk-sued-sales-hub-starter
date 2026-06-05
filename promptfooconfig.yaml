@@ -1,13 +1,21 @@
 description: "Solarwerk Süd — E-Mail-Draft Eval"
 
 prompts:
-  - prompts/email-draft.md
+  - prompts/email-draft.md           # Positiv — soll PASS
+  - prompts/email-draft-negativ.md   # Negativ — soll FAIL (Rot-Check)
 
 providers:
   - id: openrouter:anthropic/claude-haiku-4-5
+    config:
+      apiKey: "{{env.OPENROUTER_API_KEY}}"
 
 # Deterministische Checks gelten für alle 5 Testfälle
 defaultTest:
+  options:
+    provider:
+      id: openrouter:anthropic/claude-haiku-4-5
+      config:
+        apiKey: "{{env.OPENROUTER_API_KEY}}"
   assert:
     # Nachname prüfen (E-Mails nutzen "Herr Eichinger", nicht "Stefan Eichinger")
     - type: javascript
