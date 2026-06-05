@@ -1,8 +1,8 @@
 description: "Solarwerk Süd — E-Mail-Draft Eval"
 
 prompts:
-  - prompts/email-draft.md           # Positiv — soll PASS
-  - prompts/email-draft-negativ.md   # Negativ — soll FAIL (Rot-Check)
+  - prompts/email-draft.md           # Positiv — CI testet nur diesen
+  # email-draft-negativ.md nur lokal ausführen (Rot-Check)
 
 providers:
   - id: openrouter:anthropic/claude-haiku-4-5
