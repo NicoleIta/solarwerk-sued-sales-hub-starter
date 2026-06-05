@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# promptfoo results (auto-generiert, nicht committen)
+results*.json
