@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Users, CheckCircle, AlertTriangle, Wrench, Bell, Check } from "lucide-react";
+import { Users, CheckCircle, AlertTriangle, Wrench, Bell, Check, Save, Trash2, Download, X } from "lucide-react";
 import { Kunde, UserRole, Wiedervorlage } from "@/types";
 import FilterBar from "@/components/filter-bar";
 import StatKarte from "@/components/stat-karte";
@@ -21,6 +21,19 @@ interface Props {
 
 type KundeMitZustaendig = Kunde & { zustaendig_id: string | null };
 
+type DashboardFilterState = {
+  status: string;
+  branche: string;
+  suche: string;
+  mitarbeiter: string;
+};
+
+type DashboardView = {
+  id: string;
+  name: string;
+  filter_json: DashboardFilterState;
+};
+
 export default function DashboardClient({ activeUsers, currentUserId, currentUserRole }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,6 +41,7 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
 
   const [zugangsFehler, setZugangsFehler] = useState(searchParams.get("error") === "kein-zugriff");
   const [kunden, setKunden] = useState<KundeMitZustaendig[]>([]);
+  const [branchenDaten, setBranchenDaten] = useState<{ branche: string; zustaendig_id: string | null }[]>([]);
   const [laden, setLaden] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<FilterValues>({
@@ -41,10 +55,26 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
   const [kpisLaden, setKpisLaden] = useState(true);
   const [wiedervorlagen, setWiedervorlagen] = useState<Wiedervorlage[]>([]);
 
+  // Gespeicherte Sichten
+  const [sichten, setSichten] = useState<DashboardView[]>([]);
+  const [aktiveSichtId, setAktiveSichtId] = useState<string | null>(null);
+  const [sichtModalOffen, setSichtModalOffen] = useState(false);
+  const [neuerSichtName, setNeuerSichtName] = useState("");
+  const [sichtSpeichernLaden, setSichtSpeichernLaden] = useState(false);
+  const [sichtSpeichernFehler, setSichtSpeichernFehler] = useState<string | null>(null);
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSuche(filterValues.suche), 300);
     return () => clearTimeout(t);
   }, [filterValues.suche]);
+
+  useEffect(() => {
+    async function fetchBranchenDaten() {
+      const { data } = await supabase.from("kunden").select("branche, zustaendig_id");
+      setBranchenDaten((data ?? []).map((k) => ({ branche: k.branche, zustaendig_id: k.zustaendig_id ?? null })));
+    }
+    fetchBranchenDaten();
+  }, []);
 
   useEffect(() => {
     async function fetchWiedervorlagen() {
@@ -58,6 +88,17 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
       setWiedervorlagen((data ?? []) as Wiedervorlage[]);
     }
     fetchWiedervorlagen();
+  }, []);
+
+  useEffect(() => {
+    async function ladeSichten() {
+      const { data } = await supabase
+        .from("dashboard_views")
+        .select("*")
+        .order("erstellt_am", { ascending: true });
+      setSichten((data ?? []) as DashboardView[]);
+    }
+    ladeSichten();
   }, []);
 
   useEffect(() => {
@@ -130,9 +171,14 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
     ? kunden.filter((k) => k.zustaendig_id === mitarbeiterFilter)
     : kunden;
 
-  const branchenOptionen = Array.from(new Set(kunden.map((k) => k.branche).filter(Boolean)))
-    .sort()
-    .map((b) => ({ value: b, label: b }));
+  const branchenOptionen = Array.from(
+    new Set(
+      (mitarbeiterFilter
+        ? branchenDaten.filter((k) => k.zustaendig_id === mitarbeiterFilter)
+        : branchenDaten
+      ).map((k) => k.branche).filter(Boolean)
+    )
+  ).sort().map((b) => ({ value: b, label: b }));
 
   const STATUS_BUTTONS: { value: string; label: string }[] = [
     { value: "", label: "Alle" },
@@ -163,6 +209,18 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
     return wert;
   }
 
+  const hatAktiveFilter =
+    filterValues.status !== "" ||
+    filterValues.branche !== "" ||
+    filterValues.suche !== "" ||
+    (istBerechtigt ? mitarbeiterFilter !== "" : mitarbeiterFilter !== currentUserId);
+
+  function alleFilterZuruecksetzen() {
+    setFilterValues({ status: "", branche: "", suche: "" });
+    setMitarbeiterFilter(istBerechtigt ? "" : currentUserId);
+    setAktiveSichtId(null);
+  }
+
   function userLabel(userId: string | null) {
     if (!userId) return null;
     const u = activeUsers.find((u) => u.id === userId);
@@ -191,6 +249,70 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
     setKunden((prev) =>
       prev.map((k) => (k.id === kundeId ? { ...k, zustaendig_id } : k))
     );
+  }
+
+  async function sichtSpeichernSubmit() {
+    const name = neuerSichtName.trim();
+    if (!name) return;
+    setSichtSpeichernLaden(true);
+    setSichtSpeichernFehler(null);
+    const filter_json: DashboardFilterState = {
+      status: filterValues.status,
+      branche: filterValues.branche,
+      suche: filterValues.suche,
+      mitarbeiter: mitarbeiterFilter,
+    };
+    const { data, error } = await supabase
+      .from("dashboard_views")
+      .insert({ name, filter_json, user_id: currentUserId })
+      .select()
+      .single();
+    if (error) {
+      setSichtSpeichernFehler("Speichern fehlgeschlagen: " + error.message);
+    } else if (data) {
+      setSichten((prev) => [...prev, data as DashboardView]);
+      setSichtModalOffen(false);
+      setNeuerSichtName("");
+    }
+    setSichtSpeichernLaden(false);
+  }
+
+  async function sichtLoeschen(id: string) {
+    await supabase.from("dashboard_views").delete().eq("id", id);
+    setSichten((prev) => prev.filter((s) => s.id !== id));
+    if (aktiveSichtId === id) {
+      setAktiveSichtId(null);
+      setFilterValues({ status: "", branche: "", suche: "" });
+      setMitarbeiterFilter(istBerechtigt ? "" : currentUserId);
+    }
+  }
+
+  function sichtAktivieren(sicht: DashboardView) {
+    setAktiveSichtId(sicht.id);
+    setFilterValues({
+      status: sicht.filter_json.status,
+      branche: sicht.filter_json.branche,
+      suche: sicht.filter_json.suche,
+    });
+    setMitarbeiterFilter(sicht.filter_json.mitarbeiter);
+  }
+
+  function csvExportieren() {
+    const header = "Firma,Ansprechpartner,Branche,Anlage (kWp),Status,Letzter Kontakt,Telefon,E-Mail";
+    const rows = gefilterteKunden.map((k) =>
+      [k.firma, k.ansprechpartner, k.branche, k.anlagengroesse_kwp, k.status,
+       k.letzter_kontakt, k.telefon, k.email]
+        .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
+        .join(",")
+    );
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "kunden-export.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -289,22 +411,85 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
             values={filterValues}
             onChange={setFilterValues}
           />
-          <select
-            value={mitarbeiterFilter}
-            onChange={(e) => setMitarbeiterFilter(e.target.value)}
-            className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+          {istBerechtigt && (
+            <select
+              value={mitarbeiterFilter}
+              onChange={(e) => setMitarbeiterFilter(e.target.value)}
+              className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+            >
+              <option value="">Alle Mitarbeiter</option>
+              {activeUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.vorname} {u.nachname}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* Gespeicherte Sichten */}
+        <div className="flex flex-wrap items-center gap-2">
+          {sichten.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {sichten.map((sicht) => (
+                <span
+                  key={sicht.id}
+                  className={`group inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    aktiveSichtId === sicht.id
+                      ? "border-blue-500 bg-blue-600 text-white"
+                      : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400"
+                  }`}
+                >
+                  <button
+                    onClick={() => sichtAktivieren(sicht)}
+                    className="cursor-pointer"
+                  >
+                    {sicht.name}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      sichtLoeschen(sicht.id);
+                    }}
+                    className={`ml-0.5 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/10 ${
+                      aktiveSichtId === sicht.id ? "text-blue-200 hover:text-white" : "text-gray-400 hover:text-red-500"
+                    }`}
+                    title="Sicht löschen"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {hatAktiveFilter && (
+            <button
+              onClick={alleFilterZuruecksetzen}
+              className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+              title="Alle Filter zurücksetzen"
+            >
+              <X className="h-3.5 w-3.5" />
+              Alle Filter zurücksetzen
+            </button>
+          )}
+
+          <button
+            onClick={() => setSichtModalOffen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
-            <option value="">Alle Mitarbeiter</option>
-            {activeUsers.map((u) => (
-              <option
-                key={u.id}
-                value={u.id}
-                disabled={!istBerechtigt && u.id !== currentUserId}
-              >
-                {u.vorname} {u.nachname}
-              </option>
-            ))}
-          </select>
+            <Save className="h-3.5 w-3.5" />
+            Filter speichern
+          </button>
+
+          <button
+            onClick={csvExportieren}
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:border-green-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+            title={`${gefilterteKunden.length} Kunden exportieren`}
+          >
+            <Download className="h-3.5 w-3.5" />
+            Filter exportieren ({gefilterteKunden.length})
+          </button>
         </div>
       </div>
 
@@ -396,6 +581,63 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
           </p>
         )}
       </div>
+
+      {/* Modal: Filter speichern */}
+      {sichtModalOffen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setSichtModalOffen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">
+              Filter speichern
+            </h2>
+            <div className="mb-4 rounded-md bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-600 dark:text-gray-400">
+              <span className="font-medium text-gray-700 dark:text-gray-300">Aktive Filter: </span>
+              {[
+                filterValues.status && `Status: ${filterValues.status}`,
+                filterValues.branche && `Branche: ${filterValues.branche}`,
+                filterValues.suche && `Suche: „${filterValues.suche}"`,
+                mitarbeiterFilter && `Mitarbeiter: ${activeUsers.find(u => u.id === mitarbeiterFilter)?.vorname ?? mitarbeiterFilter}`,
+              ].filter(Boolean).join(" · ") || <span className="italic text-gray-400">Keine Filter aktiv — Sicht zeigt alle Kunden</span>}
+            </div>
+            <input
+              type="text"
+              value={neuerSichtName}
+              onChange={(e) => { setNeuerSichtName(e.target.value); setSichtSpeichernFehler(null); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") sichtSpeichernSubmit();
+                if (e.key === "Escape") setSichtModalOffen(false);
+              }}
+              placeholder="z. B. Aktive Solaranlagen"
+              autoFocus
+              className="mb-4 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+            />
+            {sichtSpeichernFehler && (
+              <p className="mb-3 text-xs text-red-600 dark:text-red-400">{sichtSpeichernFehler}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setSichtModalOffen(false)}
+                className="rounded-md px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={sichtSpeichernSubmit}
+                disabled={!neuerSichtName.trim() || sichtSpeichernLaden}
+                className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Save className="h-3.5 w-3.5" />
+                {sichtSpeichernLaden ? "Speichern..." : "Speichern"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
