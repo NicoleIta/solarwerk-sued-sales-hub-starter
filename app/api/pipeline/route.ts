@@ -4,6 +4,9 @@ export async function POST(request: Request) {
   const body = await request.json();
   const supabase = await createSupabaseServerClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return Response.json({ error: "Nicht eingeloggt" }, { status: 401 });
+
   let kundeUuid: string | null = null;
   if (body.kundeId) {
     const { data: kundeData } = await supabase

@@ -1,5 +1,3 @@
-"use client";
-
 import { BarChart3, Trophy, Zap, TrendingUp } from "lucide-react";
 import { Kunde, PipelineEintrag, PipelineStatus } from "@/types";
 

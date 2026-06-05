@@ -8,6 +8,9 @@ export async function PATCH(
   const body = await request.json();
   const supabase = await createSupabaseServerClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return Response.json({ error: "Nicht eingeloggt" }, { status: 401 });
+
   const update: Record<string, unknown> = {};
   if (body.status !== undefined) update.status = body.status;
   if (body.zustaendig_id !== undefined) update.zustaendig_id = body.zustaendig_id;
@@ -30,6 +33,9 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return Response.json({ error: "Nicht eingeloggt" }, { status: 401 });
 
   const { error } = await supabase
     .from("kunden")

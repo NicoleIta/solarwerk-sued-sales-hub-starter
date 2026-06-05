@@ -1,5 +1,6 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase-server";
 import { UserPermissions } from "@/types";
+import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
 
 async function requireAdmin() {
   const supabase = await createSupabaseServerClient();
@@ -34,13 +35,6 @@ export async function GET() {
 
   return Response.json({ profiles });
 }
-
-const DEFAULT_PERMISSIONS: UserPermissions = {
-  kunden:             { read: true,  edit: false, delete: false },
-  pipeline:           { read: true,  edit: false, delete: false },
-  berichte:           { read: true,  edit: false, delete: false },
-  benutzerverwaltung: { read: false, edit: false, delete: false },
-};
 
 export async function POST(request: Request) {
   const { error } = await requireAdmin();
