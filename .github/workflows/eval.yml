@@ -5,11 +5,11 @@ on:
   push:
     paths:
       - "prompts/**"
-      - "promptfooconfig.yaml"
+      - "promptfoo/promptfooconfig.yaml"
   pull_request:
     paths:
       - "prompts/**"
-      - "promptfooconfig.yaml"
+      - "promptfoo/promptfooconfig.yaml"
 
 jobs:
   eval:
@@ -34,6 +34,6 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
       - name: Evals ausführen
-        run: promptfoo eval --no-cache
+        run: promptfoo eval --config promptfoo/promptfooconfig.yaml --no-cache
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}

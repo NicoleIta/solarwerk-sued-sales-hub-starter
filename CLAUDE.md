@@ -35,6 +35,27 @@ npm run build  # Production-Build
 npm run lint   # ESLint
 ```
 
+## PromptFoo Evals
+
+Configs liegen in `promptfoo/`. Immer `--env-file .env.local` angeben (OPENROUTER_API_KEY).
+
+```bash
+# Standard-Eval (E-Mail-Draft)
+npx promptfoo eval --config promptfoo/promptfooconfig.yaml --env-file .env.local
+npx promptfoo eval --config promptfoo/promptfooconfig.yaml --env-file .env.local --repeat 3
+
+# Angebot-Eval
+npx promptfoo eval --config promptfoo/promptfooconfig-angebot.yaml --env-file .env.local
+npx promptfoo eval --config promptfoo/promptfooconfig-angebot.yaml --env-file .env.local --repeat 3
+
+# Zusammenfassung-Eval
+npx promptfoo eval --config promptfoo/promptfooconfig-zusammenfassung.yaml --env-file .env.local
+npx promptfoo eval --config promptfoo/promptfooconfig-zusammenfassung.yaml --env-file .env.local --repeat 3
+
+# Ergebnisse im Browser öffnen
+npx promptfoo view
+```
+
 ## Lehr-Repo Hinweis
 
 Dies ist ein Starter-Repo fuer einen KI-Kurs (Tag 42, Modul Vibe Coding). Bewusst unfertige Stellen sind paedagogisch gewollt:
