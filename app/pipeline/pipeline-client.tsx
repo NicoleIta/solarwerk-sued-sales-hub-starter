@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { TrendingUp, FileText, XCircle } from "lucide-react";
-import { PipelineStatus, UserRole } from "@/types";
+import { KundenStatus, PipelineStatus, UserRole } from "@/types";
 import { PIPELINE_STYLE } from "@/components/pipeline-status-badge";
 import StatKarte from "@/components/stat-karte";
+import PipelineAutoBadge from "@/components/pipeline-auto-badge";
 import { supabase } from "@/lib/supabase";
 import { isAdminOrTeamleiter } from "@/lib/permissions";
+import { computeKundeStatus } from "@/lib/pipeline-rules";
 
 type ActiveUser = { id: string; vorname: string; nachname: string };
 
@@ -30,6 +32,9 @@ type SupabasePipelineEintrag = {
     ansprechpartner: string;
     branche: string;
     zustaendig_id: string | null;
+    status: string;
+    letzter_kontakt: string;
+    created_at: string;
   } | null;
 };
 
@@ -67,7 +72,7 @@ export default function PipelineClient({ activeUsers, currentUserId, currentUser
       setFehler(null);
       let query = supabase
         .from("pipeline")
-        .select("*, kunden(ansprechpartner, branche, zustaendig_id)")
+        .select("*, kunden(ansprechpartner, branche, zustaendig_id, status, letzter_kontakt, created_at)")
         .order("datum", { ascending: false });
       if (statusFilter !== "alle") query = query.eq("status", statusFilter);
       if (debouncedSuche) query = query.ilike("titel", `%${debouncedSuche}%`);
@@ -225,6 +230,7 @@ export default function PipelineClient({ activeUsers, currentUserId, currentUser
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Datum</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Zuständig</th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Kunde-Status</th>
             </tr>
           </thead>
           <tbody>
@@ -246,6 +252,29 @@ export default function PipelineClient({ activeUsers, currentUserId, currentUser
                 </td>
                 <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
                   {userLabel(eintrag.kunden?.zustaendig_id ?? null) ?? "—"}
+                </td>
+                <td className="px-4 py-3">
+                  {eintrag.kunden ? (
+                    <PipelineAutoBadge
+                      status={computeKundeStatus(
+                        {
+                          id: 0,
+                          firma: eintrag.titel,
+                          ansprechpartner: eintrag.kunden.ansprechpartner,
+                          branche: eintrag.kunden.branche,
+                          anlagengroesse_kwp: 0,
+                          status: eintrag.kunden.status as KundenStatus,
+                          letzter_kontakt: eintrag.kunden.letzter_kontakt,
+                          telefon: "",
+                          email: "",
+                          notiz: "",
+                          created_at: eintrag.kunden.created_at,
+                        },
+                        [],
+                        [eintrag]
+                      )}
+                    />
+                  ) : null}
                 </td>
               </tr>
             ))}

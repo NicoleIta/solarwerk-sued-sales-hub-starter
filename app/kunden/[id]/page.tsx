@@ -3,6 +3,7 @@ import KundeDetailClient from "./kunde-detail-client";
 import { notFound, redirect } from "next/navigation";
 import { Aktivitaet, Kunde, PipelineEintrag } from "@/types";
 import { ladeBenutzerPermissions } from "@/lib/permissions";
+import { computeKundeStatus } from "@/lib/pipeline-rules";
 
 export default async function KundenDetailPage({
   params,
@@ -37,6 +38,7 @@ export default async function KundenDetailPage({
     telefon: data.telefon,
     email: data.email,
     notiz: data.notiz,
+    created_at: data.created_at,
   };
 
   const [{ data: pipelineData }, { data: aktivitaetenData }, { data: { session } }] =
@@ -51,14 +53,18 @@ export default async function KundenDetailPage({
     ]);
 
   const canDelete = isAdmin || permissions.kunden.delete;
+  const pipelineEintraege = (pipelineData ?? []) as PipelineEintrag[];
+  const aktivitaeten = (aktivitaetenData ?? []) as Aktivitaet[];
+  const pipelineStatus = computeKundeStatus(kunde, aktivitaeten, pipelineEintraege);
 
   return (
     <KundeDetailClient
       kunde={kunde}
-      pipelineEintraege={(pipelineData ?? []) as PipelineEintrag[]}
-      aktivitaeten={(aktivitaetenData ?? []) as Aktivitaet[]}
+      pipelineEintraege={pipelineEintraege}
+      aktivitaeten={aktivitaeten}
       currentUserId={session?.user.id ?? ""}
       canDelete={canDelete}
+      pipelineStatus={pipelineStatus}
     />
   );
 }

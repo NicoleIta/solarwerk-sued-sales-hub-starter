@@ -14,6 +14,7 @@ export interface Kunde {
   telefon: string;
   email: string;
   notiz: string;
+  created_at?: string;
 }
 
 export interface PipelineEintrag {

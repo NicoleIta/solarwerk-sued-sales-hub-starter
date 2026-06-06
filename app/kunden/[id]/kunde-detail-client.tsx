@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ArrowLeft, Loader2, Mail, Zap } from "lucide-react";
 import { Aktivitaet, Kunde, KundenStatus, PipelineEintrag } from "@/types";
 import StatusBadge from "@/app/status-badge";
+import PipelineAutoBadge from "@/components/pipeline-auto-badge";
+import type { PipelineAutoStatus } from "@/lib/pipeline-rules";
 import InfoField from "@/components/info-field";
 import PipelineStatusBadge from "@/components/pipeline-status-badge";
 import AktivitaetenClient from "./aktivitaeten-client";
@@ -21,12 +23,14 @@ export default function KundeDetailClient({
   aktivitaeten,
   currentUserId,
   canDelete,
+  pipelineStatus,
 }: {
   kunde: Kunde;
   pipelineEintraege: PipelineEintrag[];
   aktivitaeten: Aktivitaet[];
   currentUserId: string;
   canDelete: boolean;
+  pipelineStatus: PipelineAutoStatus | null;
 }) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -210,7 +214,10 @@ export default function KundeDetailClient({
               className="flex-1 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 px-2 py-1 text-2xl font-bold"
             />
           ) : (
-            <h1 className="text-2xl font-bold">{formData.firma}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">{formData.firma}</h1>
+              <PipelineAutoBadge status={pipelineStatus} />
+            </div>
           )}
           {isEditing ? (
             <select
