@@ -545,7 +545,7 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
           <tbody>
             {gefilterteKunden.map((kunde) => (
               <tr
-                key={kunde.id}
+                key={kunde.supabase_uuid ?? String(kunde.id)}
                 onClick={() => router.push(`/kunden/${kunde.id}`)}
                 className="cursor-pointer border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
               >

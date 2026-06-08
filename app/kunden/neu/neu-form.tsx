@@ -32,7 +32,8 @@ export default function NeuerKundeForm({ activeUsers, currentUserId, currentUser
     zustaendig_id: currentUserId,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [dubletteWarnung, setDubletteWarnung] = useState<{ name: string; firma: string } | null>(null);
+  const [dubletteWarnung, setDubletteWarnung] = useState<{ id: number; name: string; firma: string } | null>(null);
+  const [dubletteModalOffen, setDubletteModalOffen] = useState(false);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -72,9 +73,28 @@ export default function NeuerKundeForm({ activeUsers, currentUserId, currentUser
       });
       if (!res.ok) return;
       const data = await res.json();
-      setDubletteWarnung(data.treffer ?? null);
+      if (data.treffer) {
+        setDubletteWarnung(data.treffer);
+        setDubletteModalOffen(true);
+      } else {
+        setDubletteWarnung(null);
+      }
     } catch {
       // API-Fehler ignorieren — Formular bleibt bedienbar
+    }
+  }
+
+  async function handleAnsprechpartnerUebernehmen() {
+    if (!dubletteWarnung) return;
+    try {
+      await fetch(`/api/kunden/${dubletteWarnung.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ansprechpartner: formData.ansprechpartner }),
+      });
+      router.push(`/kunden/${dubletteWarnung.id}`);
+    } catch {
+      setDubletteModalOffen(false);
     }
   }
 
@@ -110,6 +130,41 @@ export default function NeuerKundeForm({ activeUsers, currentUserId, currentUser
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Neuen Kunden anlegen</h1>
+
+      {/* Dubletten-Modal */}
+      {dubletteModalOffen && dubletteWarnung && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6 max-w-md w-full mx-4 shadow-xl">
+            <h2 className="text-lg font-semibold mb-2">Mögliche Dublette gefunden</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              Es gibt bereits einen ähnlichen Kunden:{" "}
+              <strong>{dubletteWarnung.name}</strong> bei <strong>{dubletteWarnung.firma}</strong>.
+            </p>
+            {formData.ansprechpartner && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Soll der Ansprechpartner dort auf{" "}
+                <strong>{formData.ansprechpartner}</strong> aktualisiert werden?
+              </p>
+            )}
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={handleAnsprechpartnerUebernehmen}
+                className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Ansprechpartner übernehmen
+              </button>
+              <button
+                type="button"
+                onClick={() => setDubletteModalOffen(false)}
+                className="flex-1 rounded-md border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                Trotzdem neu anlegen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}
@@ -210,11 +265,6 @@ export default function NeuerKundeForm({ activeUsers, currentUserId, currentUser
               onBlur={handleEmailBlur}
               className={inputClass("email")}
             />
-            {dubletteWarnung && (
-              <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded px-2 py-1">
-                Ähnlich zu <strong>{dubletteWarnung.name}</strong>, {dubletteWarnung.firma}
-              </p>
-            )}
           </FormField>
         </div>
 
