@@ -32,6 +32,7 @@ export default function NeuerKundeForm({ activeUsers, currentUserId, currentUser
     zustaendig_id: currentUserId,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dubletteWarnung, setDubletteWarnung] = useState<{ name: string; firma: string } | null>(null);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -53,6 +54,27 @@ export default function NeuerKundeForm({ activeUsers, currentUserId, currentUser
     const feldFehler = result.find(f => f.feld === name);
     if (feldFehler) {
       setErrors(prev => ({ ...prev, [name]: feldFehler.meldung }));
+    }
+  }
+
+  async function handleEmailBlur(e: React.FocusEvent<HTMLInputElement>) {
+    handleBlur(e);
+    const email = e.target.value.trim();
+    if (!email) {
+      setDubletteWarnung(null);
+      return;
+    }
+    try {
+      const res = await fetch("/api/dubletten-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setDubletteWarnung(data.treffer ?? null);
+    } catch {
+      // API-Fehler ignorieren — Formular bleibt bedienbar
     }
   }
 
@@ -185,9 +207,14 @@ export default function NeuerKundeForm({ activeUsers, currentUserId, currentUser
               name="email"
               value={formData.email}
               onChange={handleChange}
-              onBlur={handleBlur}
+              onBlur={handleEmailBlur}
               className={inputClass("email")}
             />
+            {dubletteWarnung && (
+              <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded px-2 py-1">
+                Ähnlich zu <strong>{dubletteWarnung.name}</strong>, {dubletteWarnung.firma}
+              </p>
+            )}
           </FormField>
         </div>
 
