@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const dist = levenshtein(email.toLowerCase(), kunde.email.toLowerCase());
     if (dist > 0 && dist <= schwellenwert) {
       return NextResponse.json({
-        treffer: { name: kunde.ansprechpartner, firma: kunde.firma },
+        treffer: { id: kunde.id, name: kunde.ansprechpartner, firma: kunde.firma },
       });
     }
   }
