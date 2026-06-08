@@ -4,12 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Users, CheckCircle, AlertTriangle, Wrench, Bell, Check, Save, Trash2, Download, X } from "lucide-react";
-import { Kunde, UserRole, Wiedervorlage } from "@/types";
+import { Kunde, PipelineStatus, UserRole, Wiedervorlage } from "@/types";
 import FilterBar from "@/components/filter-bar";
 import StatKarte from "@/components/stat-karte";
+import PipelineAutoBadge from "@/components/pipeline-auto-badge";
 import type { FilterValues, FilterDefinition } from "@/components/filter-bar";
 import { supabase } from "@/lib/supabase";
 import { isAdminOrTeamleiter } from "@/lib/permissions";
+import { computeKundeStatus } from "@/lib/pipeline-rules";
 
 type ActiveUser = { id: string; vorname: string; nachname: string };
 
@@ -54,6 +56,8 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
   const [kpis, setKpis] = useState<{ gesamt: number | null; aktive: number | null; inWartung: number | null; beschwerden: number | null }>({ gesamt: null, aktive: null, inWartung: null, beschwerden: null });
   const [kpisLaden, setKpisLaden] = useState(true);
   const [wiedervorlagen, setWiedervorlagen] = useState<Wiedervorlage[]>([]);
+  const [letzteAktivitaet, setLetzteAktivitaet] = useState<Record<string, string>>({});
+  const [pipelineByKundeId, setPipelineByKundeId] = useState<Record<string, { status: PipelineStatus }[]>>({});
 
   // Gespeicherte Sichten
   const [sichten, setSichten] = useState<DashboardView[]>([]);
@@ -88,6 +92,30 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
       setWiedervorlagen((data ?? []) as Wiedervorlage[]);
     }
     fetchWiedervorlagen();
+  }, []);
+
+  useEffect(() => {
+    async function fetchPipelineAutomatikDaten() {
+      const [{ data: akt }, { data: pip }] = await Promise.all([
+        supabase.from("aktivitaeten").select("kunde_id, erstellt_am"),
+        supabase.from("pipeline").select("kunde_id, status").not("kunde_id", "is", null),
+      ]);
+      const aktMap: Record<string, string> = {};
+      for (const a of akt ?? []) {
+        if (!aktMap[a.kunde_id] || a.erstellt_am > aktMap[a.kunde_id]) {
+          aktMap[a.kunde_id] = a.erstellt_am;
+        }
+      }
+      setLetzteAktivitaet(aktMap);
+      const pipMap: Record<string, { status: PipelineStatus }[]> = {};
+      for (const p of pip ?? []) {
+        if (p.kunde_id) {
+          pipMap[p.kunde_id] = [...(pipMap[p.kunde_id] ?? []), { status: p.status as PipelineStatus }];
+        }
+      }
+      setPipelineByKundeId(pipMap);
+    }
+    fetchPipelineAutomatikDaten();
   }, []);
 
   useEffect(() => {
@@ -130,6 +158,7 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
             telefon: k.telefon,
             email: k.email,
             notiz: k.notiz,
+            created_at: k.created_at,
             zustaendig_id: k.zustaendig_id ?? null,
           }))
         );
@@ -510,6 +539,7 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Zuständig</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Letzter Kontakt</th>
+              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Automatik</th>
             </tr>
           </thead>
           <tbody>
@@ -566,6 +596,14 @@ export default function DashboardClient({ activeUsers, currentUserId, currentUse
                   )}
                 </td>
                 <td className="px-4 py-3">{kunde.letzter_kontakt}</td>
+                <td className="px-4 py-3">
+                  {(() => {
+                    const letzteAkt = letzteAktivitaet[kunde.supabase_uuid ?? ""];
+                    const aktFuerKunde = letzteAkt ? [{ erstellt_am: letzteAkt }] : [];
+                    const angeboteFuerKunde = pipelineByKundeId[kunde.supabase_uuid ?? ""] ?? [];
+                    return <PipelineAutoBadge status={computeKundeStatus(kunde, aktFuerKunde, angeboteFuerKunde)} />;
+                  })()}
+                </td>
               </tr>
             ))}
           </tbody>
