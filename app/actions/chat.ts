@@ -72,7 +72,7 @@ export async function sendeChatNachricht(
     return "Konfigurationsfehler: OPENROUTER_API_KEY fehlt.";
   }
 
-  const kunden = getKunden();
+  const kunden = await getKunden();
   const pipeline = getPipeline();
 
   const relevanteKunden = findeRelevanteKunden(nachricht, kunden);
