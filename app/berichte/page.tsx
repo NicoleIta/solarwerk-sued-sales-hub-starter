@@ -12,7 +12,7 @@ export default async function BerichtePage() {
   if (!isAdmin && !permissions.berichte.read) {
     redirect("/?error=kein-zugriff");
   }
-  const kunden = getKunden();
+  const kunden = await getKunden();
   const pipeline = getPipeline();
   return <BerichteClient kunden={kunden} pipeline={pipeline} />;
 }
