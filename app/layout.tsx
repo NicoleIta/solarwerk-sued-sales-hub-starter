@@ -4,6 +4,7 @@ import "./globals.css";
 import Navigation from "@/components/Navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { ladeBenutzerPermissions } from "@/lib/permissions";
+import ChatWidget from "./chat-widget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default async function RootLayout({
         <footer className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-4 text-center text-sm text-gray-400 dark:text-gray-500">
           Solarwerk Sued GmbH &middot; Stadtbergen
         </footer>
+        <ChatWidget />
       </body>
     </html>
   );
