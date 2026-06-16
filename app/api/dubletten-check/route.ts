@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ treffer: null });
   }
 
-  const kunden = getKunden();
+  const kunden = await getKunden();
   const schwellenwert = email.length <= 10 ? 2 : 3;
 
   for (const kunde of kunden) {
